@@ -58,9 +58,13 @@ AssaultCube (x86)                       Host (C99 / Win API)                ESP3
 </p>
 
 <p align="center">
-  <i>Second live telemetry test — ammo values read in real time</i><br><br>
+  <i>Second live telemetry test — ammo values read in real time</i>
 </p>
-https://github.com/user-attachments/assets/c678a5b5-b397-49c4-a5ff-78664d6f25ea
+
+
+https://github.com/user-attachments/assets/b9e7738f-c16e-413c-b8de-f4cf0d1f48b3
+
+
 
 ## License
 
