@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="VG_Telemetry.vcxproj" Id="4dce0a7c-8e0c-4321-a547-83237c4c92ae" />
+</Solution>

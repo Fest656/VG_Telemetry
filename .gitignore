@@ -1,0 +1,29 @@
+# === Visual Studio ===
+.vs/
+*.suo
+*.user
+*.sdf
+*.opensdf
+*.db
+*.db-shm
+*.db-wal
+*.opendb
+ipch/
+
+# === Build outputs ===
+bin/
+obj/
+Debug/
+Release/
+x64/
+x86/
+*.exe
+*.obj
+*.pdb
+*.ilk
+*.log
+
+# === Clangd / LSP cache ===
+.cache/
+.clangd
+compile_commands.json
