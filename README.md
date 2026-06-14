@@ -46,7 +46,7 @@ AssaultCube (x86)                       Host (C99 / Win API)                ESP3
 
 | Phase | State |
 |---|---|
-| RE & Memory Mapping | ✅ Health offset verified |
+| RE & Memory Mapping | ✅ Health/Armor/Ammo offset verified |
 | Host Application | 🚧 Core memory reader working |
 | Serial Communication | ⏳ Pending |
 | ESP32 Firmware | ⏳ Pending |
@@ -55,6 +55,13 @@ AssaultCube (x86)                       Host (C99 / Win API)                ESP3
 <p align="center">
   <i>First live telemetry test — health value read in real time</i><br><br>
   <img src="docs/Telemetry_testn1.gif" width="700"/>
+</p>
+
+<p align="center">
+  <i>Second live telemetry test — ammo values read in real time</i><br><br>
+  <a href="https://github.com/user-attachments/assets/c678a5b5-b397-49c4-a5ff-78664d6f25ea">
+    <img src="https://github.com/user-attachments/assets/c678a5b5-b397-49c4-a5ff-78664d6f25ea" width="700"/>
+  </a>
 </p>
 
 ## License
