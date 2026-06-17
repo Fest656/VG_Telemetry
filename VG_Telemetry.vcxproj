@@ -151,10 +151,12 @@
   <ItemGroup>
     <ClCompile Include="src\main.c" />
     <ClCompile Include="src\memory\memory.c" />
+    <ClCompile Include="src\telemetry\telemetry.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\memory\memory.h" />
     <ClInclude Include="src\memory\offsets.h" />
+    <ClInclude Include="src\telemetry\telemetry.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

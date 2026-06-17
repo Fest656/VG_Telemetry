@@ -1,13 +1,13 @@
 # AssaultCube Telemetry Tracker
 
-A real-time hardware telemetry system that reads live game state from **AssaultCube** via the Window's API, then transmits it over serial to an **ESP32** microcontroller driving physical displays.
+A real-time hardware telemetry system that reads live game state from **AssaultCube** via the Window's API, then transmits it over serial to a **Raspberry Pi Pico** microcontroller driving physical displays.
 
 Built as a personal project to learn  reverse engineering, Windows process internals, and embedded systems.
 
 ## How It Works
 
 ```
-AssaultCube (x86)                       Host (C99 / Win API)                ESP32
+AssaultCube (x86)                       Host (C99 / Win API)                Raspberry Pi Pico
 ┌──────────────┐     ReadProcessMemory       ┌──────┐     Serial/USB     ┌──────────┐
 │ Process RAM  │  ─────────────────────────► │ Host │ ─────────────────► │ Display  │
 └──────────────┘  (read-only, no injection)  └──────┘   115200 baud      └──────────┘
@@ -16,7 +16,7 @@ AssaultCube (x86)                       Host (C99 / Win API)                ESP3
 1. **Reverse engineer** memory offsets with Cheat Engine
 2. **Read** live values (health, armour, ammo) through static pointer chains
 3. **Transmit** via ASCII serial protocol
-4. **Display** on physical hardware driven by the ESP32
+4. **Display** on physical hardware driven by the Raspberry Pi Pico and a SSD1306
 
 
 
@@ -29,7 +29,7 @@ AssaultCube (x86)                       Host (C99 / Win API)                ESP3
 │   └── memory/             # Windows process memory API
 │       ├── memory.c/.h     # Attach, read, handle management
 │       └── offsets.h       # Reverse-engineered addresses
-├── esp32/                  # ESP32 firmware (TBD)
+├── pico/                   # Pico firmware (TBD)
 ├── docs/
 │   ├── context.md          # RE methodology & findings
 │   └── changelog.md        # Per-session development log
@@ -49,7 +49,7 @@ AssaultCube (x86)                       Host (C99 / Win API)                ESP3
 | RE & Memory Mapping | ✅ Health/Armor/Ammo offset verified |
 | Host Application | 🚧 Core memory reader working |
 | Serial Communication | ⏳ Pending |
-| ESP32 Firmware | ⏳ Pending |
+| Pico Firmware | ⏳ Pending |
 
 
 <p align="center">

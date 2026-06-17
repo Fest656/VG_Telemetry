@@ -90,3 +90,38 @@ Now we were onto more difficult challenges such as the ammo counters. As describ
 
 > [!WARNING]
 > VG_Telemetry must be initiated and tested in the **base lobby** for the game, otherwise health always reads zero. This is a quirk of how AssaultCube initializes the local player object in memory.
+
+---
+
+# Phase 3: Hardware Integration Architecture
+
+To achieve the hardware/embedded programming part of this project we decided to integrate an external microcontroller and an OLED screen.
+
+**Hardware Stack:**
+*   **Microcontroller:** Raspberry Pi Pico (RP2040)
+*   **Display:** SSD1306 or SH1106 OLED (4-Pin I2C version)
+
+**Architectural Flow:**
+1.  **Host PC (`VG_Telemetry.exe`):** The Windows C program continues reading live telemetry (health, armor, active ammo) from the game memory. It then opens a standard Serial Port (COM) connection to the Pico via USB and sends the telemetry data as formatted packets.
+2.  **Raspberry Pi Pico:** Running a C/C++ firmware program, the Pico acts as a native USB Serial device. It runs an infinite loop waiting to receive and parse the incoming serial packets from the host PC.
+3.  **OLED Display (I2C):** The Pico utilizes its hardware I2C controllers (using only 4 wires: VCC, GND, SDA, and SCL) to send drawing commands to the OLED screen. This allows us to display live health bars and ammo counters externally, completely decoupled from the game's rendering engine.
+
+The decision to use the Raspberry Pi Pico over a WiFi-enabled MCU like the ESP32 was driven by its robust native USB support for Serial communication and seamless integration with C/C++ SDKs, keeping the entire project unified under the C programming standard.
+
+---
+
+# Phase 4: Serial Telemetry Implementation
+
+With the memory extraction working, we needed a way to transmit the `GameState` out of the host PC. We built a custom serial transmission module (`telemetry.c` / `telemetry.h`) utilizing the Windows API.
+
+## Windows API Serial Communication
+Just like reading memory, manipulating hardware ports in Windows requires requesting handles and configuring low-level structs. We implemented three core functions:
+
+1. **`telOpenPort`:** We use `CreateFile` (with `GENERIC_READ | GENERIC_WRITE`) to request an I/O handle to the target COM port. If successful, Windows grants us exclusive access to the USB serial connection.
+> [!IMPORTANT]
+> **Handle Ownership Rule:** Just like our memory API (`memOpenProcess`), any function in this project that successfully opens a Windows `HANDLE` and returns it transfers ownership to the caller. The caller (typically `main.c`) is always responsible for eventually calling `CloseHandle()`.
+2. **`telSetPort`:** Serial ports require strict synchronization between sender and receiver. We use the `GetCommState` and `SetCommState` functions to inject our configuration into the port's Device Control Block (`DCB`), explicitly setting the baud rate to `115200`, 8 data bits, no parity, and 1 stop bit. Crucially, we also initialize a `COMMTIMEOUTS` struct and apply it via `SetCommTimeouts` to ensure `WriteFile` operations do not block the thread indefinitely if the Pico is disconnected.
+3. **`telSendState`:** To minimize dynamic memory allocation and the potential issues that come with it, we format the outgoing data using `snprintf` into an array (`char buffer[64]`). We then use `WriteFile` to push the buffer out through the COM handle.
+
+## Host Application Integration
+As a bridging step before connecting the physical microcontroller, we updated the host application's main loop in `main.c` to populate the `GameState` struct directly. We bypassed the serial transmission temporarily and used `telStateFormat` to output the formatted CSV string directly to the console. This allowed us to visually verify that the memory extraction and protocol formatting logic were perfectly synchronized in real-time.

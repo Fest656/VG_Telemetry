@@ -1,5 +1,6 @@
 #include "memory/memory.h"
 #include "memory/offsets.h"
+#include "telemetry/telemetry.h"
 #include <handleapi.h>
 #include <stdio.h>
 #include <synchapi.h>
@@ -37,48 +38,36 @@ int main() {
     }
     printf("Found local player at: %d\n", localPlayer);
 
-
-
+    GameState state;
     int activeWeapon;
-    //int playerHealth;
-    //int playerArmor;
     int magAmmoPointer;
-    int magazineAmmo;
     int reserveAmmoPointer;
-    int reserveAmmo;
+
     while(1) {
-        
-        // Read active weapon
+        // Read active weapon pointer
         if (memReadInt(handle, (localPlayer + OFFSET_WEAPON), &activeWeapon) == 0) {
             printf("Failed to read the active weapon!\n");
             CloseHandle(handle);
             return 0;
         }
-        /*
+
         // Read health
-        if (memReadInt(handle, (localPlayer + OFFSET_HEALTH), &playerHealth) != 0) {
-            printf("Health %d\n", playerHealth);
-        }
+        memReadInt(handle, (localPlayer + OFFSET_HEALTH), &state.health);
+
         // Read armor
-        if (memReadInt(handle, (localPlayer + OFFSET_ARMOR), &playerArmor) != 0) {
-            printf("Armor %d\n", playerArmor);
-        }
-        */
-        // Read mag ammo
+        memReadInt(handle, (localPlayer + OFFSET_ARMOR), &state.armor);
+
+        // Read mag ammo (requires another dereference)
         if (memReadInt(handle, (activeWeapon + OFFSET_MAGAMMO), &magAmmoPointer) != 0) {
-            // Dereference
-            if (memReadInt(handle, magAmmoPointer, &magazineAmmo) != 0) {
-                printf("Ammo in mag: %d\n", magazineAmmo);
-            }
+            memReadInt(handle, magAmmoPointer, &state.magAmmo);
         }
 
+        // Read reserve ammo (requires another dereference)
         if (memReadInt(handle, (activeWeapon + OFFSET_RESERVEAMMO), &reserveAmmoPointer) != 0) {
-            // Dereference
-            if (memReadInt(handle, reserveAmmoPointer, &reserveAmmo) != 0) {
-                printf("Ammo in reserve: %d\n", reserveAmmo);
-            }
+            memReadInt(handle, reserveAmmoPointer, &state.reserveAmmo);
         }
 
+        telStateFormat(&state);
         Sleep(5000);
     }
     

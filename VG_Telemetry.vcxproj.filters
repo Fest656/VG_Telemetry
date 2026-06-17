@@ -21,12 +21,18 @@
     <ClCompile Include="src\memory\memory.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\telemetry\telemetry.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\memory\memory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\memory\offsets.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\telemetry\telemetry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
