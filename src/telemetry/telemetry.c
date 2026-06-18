@@ -4,7 +4,7 @@
 
 // https://learn.microsoft.com/en-us/previous-versions/ms810467(v=msdn.10)?redirectedfrom=MSDN
 
-// The protocol transports data in the following format: [ Health; Armour; Reserve; Mag ]
+// The protocol transports data in the following format: [ Health; Armour; Mag; Reserve ]
 void telStateFormat(GameState *state) {
 	// Used for testing, prints to the console
 	printf("HP:%d\nArmor:%d\nAmmo in mag:%d\nReserve ammo:%d\n", state->health, state->armor, state->magAmmo, state->reserveAmmo);

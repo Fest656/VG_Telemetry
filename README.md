@@ -26,11 +26,17 @@ AssaultCube (x86)                       Host (C99 / Win API)                Rasp
 ./
 ├── src/
 │   ├── main.c              # Entry point, main loop
-│   └── memory/             # Windows process memory API
-│       ├── memory.c/.h     # Attach, read, handle management
-│       └── offsets.h       # Reverse-engineered addresses
-├── pico/                   # Pico firmware (TBD)
-├── docs/
+│   ├── memory/             # Windows process memory API
+│   │   ├── memory.c/.h     # Attach, read, handle management
+│   │   └── offsets.h       # Memory offsets for game values
+│   └── telemetry/          # Windows serial telemetry transmission
+│       └── telemetry.c/.h  # Format and send state over COM port
+├── pico/                   # Source files for the MCU and the display unit
+│   └── telemetry_display/
+│       ├── serial.c        # Parses incoming serial data
+│       ├── serial.h        # Serial communication protocol definitions
+│       └── state.h         # GameState structures matching the host
+├── docs/                   # Documents that follow the development of this project
 │   ├── context.md          # RE methodology & findings
 │   └── changelog.md        # Per-session development log
 └── VG_Telemetry.vcxproj    # Visual Studio project
@@ -47,7 +53,7 @@ AssaultCube (x86)                       Host (C99 / Win API)                Rasp
 | Phase | State |
 |---|---|
 | RE & Memory Mapping | ✅ Health/Armor/Ammo offset verified |
-| Host Application | 🚧 Core memory reader working |
+| Host Application | ✅ Developed but without the hardware side implemented |
 | Serial Communication | ⏳ Pending |
 | Pico Firmware | ⏳ Pending |
 

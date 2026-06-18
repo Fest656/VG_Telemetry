@@ -125,3 +125,26 @@ Just like reading memory, manipulating hardware ports in Windows requires reques
 
 ## Host Application Integration
 As a bridging step before connecting the physical microcontroller, we updated the host application's main loop in `main.c` to populate the `GameState` struct directly. We bypassed the serial transmission temporarily and used `telStateFormat` to output the formatted CSV string directly to the console. This allowed us to visually verify that the memory extraction and protocol formatting logic were perfectly synchronized in real-time.
+
+---
+
+# Phase 5: Hardware Firmware Preparation
+
+We have outlined the implementation plan for the hardware side (Raspberry Pi Pico). We prepared the project to start writing code for the microcontroller by installing the official Raspberry Pi Pico VS Code extension, which seamlessly manages the SDK, CMake, and toolchain configurations.
+
+For the OLED display, we decided to implement a minimal, bare-metal SSD1306 driver, stripping away all unnecessary primitives and focusing purely on text rendering for now.
+
+**Important References for Study:**
+* [Raspberry Pi Pico SSD1306 Example](https://github.com/raspberrypi/pico-examples/tree/master/i2c/ssd1306_i2c) - We will port the initialisation sequence and the `WriteString`/`WriteChar` functions from this example.
+* [daschr/pico-ssd1306](https://github.com/daschr/pico-ssd1306/tree/main) - An alternative lightweight library that serves as a good educational reference for structuring an OLED driver.
+
+---
+
+# Phase 6: Pico Firmware Implementation
+
+## Serial Telemetry Module
+
+* **Reading Data:** To ensure the microcontroller never hangs waiting for a PC connection, we avoided standard blocking functions like `fgets`. Instead, we built a custom reading loop utilizing the Pico SDK's `getchar_timeout_us()`.
+* **Parsing Data:** We used `sscanf` to parse the CSV string. Crucially, we implemented strict validation by checking the return value of `sscanf`. If it does not successfully match all 4 expected variables, the packet is corrupted.
+* **Struct Mutation:** We defined the `GameState` struct in `state.h`. For simplicity and readability, we pass a standard single pointer (`GameState *state`) to the parser function, as no dynamic memory allocation or pointer re-assignment is occurring on the device.
+* **Echo Testing:** Since the Pico is configured for "Console over USB", we implemented a `serLineWrite` function that uses standard `printf` to immediately send the parsed values back up the USB cable to the host application.

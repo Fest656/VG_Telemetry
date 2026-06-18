@@ -1,10 +1,10 @@
 #include "memory/memory.h"
 #include "memory/offsets.h"
 #include "telemetry/telemetry.h"
-#include <handleapi.h>
 #include <stdio.h>
-#include <synchapi.h>
+#include <windows.h>
 
+#define PROCESS_NAME "ac_client.exe"
 
 int main() {
     // Initialize memGetProcessId

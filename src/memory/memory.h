@@ -4,9 +4,6 @@
 #include <Windows.h>
 #include <stdint.h>
 
-
-#define PROCESS_NAME "ac_client.exe"
-
 /*
 This file is responsible for the memory operations of the project
 We will need a function to get the Process ID, one to obtain a handle to that Process ID and one that returns the base address of the process.

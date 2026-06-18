@@ -38,3 +38,22 @@
 
 ### Notes
 - Decided to use standard Windows API `BOOL` over C99 `<stdbool.h>` `bool` to conform to the WINAPI.
+
+## [17-06-2026] — Phase 5 (Hardware Firmware Preparation)
+
+### Notes
+- Outlined the implementation plan for the hardware side (Raspberry Pi Pico).
+- Prepared the workspace to start writing code for the Pico by installing the official VS Code SDK extension and creating a project following their guide.
+- Decided on a bare-metal SSD1306 driver approach utilizing official Raspberry Pi examples to fit our use case.
+
+## [18-06-2026] — Firmware Milestone 1 (Serial Ingestion & Parsing)
+
+### Added
+- `telemetry_display/state.h`: Created the `GameState` struct.
+- `telemetry_display/serial`: Implemented `serLineRead` utilizing a non-blocking `getchar_timeout_us` polling loop to prevent the microcontroller from freezing if the serial connection drops.
+- `telemetry_display/serial`: Implemented `serDataHandler` using `sscanf` to parse incoming CSV telemetry packets. Added strict validation to ensure exactly 4 integers are matched, dropping corrupted payloads.
+- `telemetry_display/serial`: Implemented `serLineWrite` using standard `printf` to echo parsed data back over the virtual USB COM port for testing.
+
+### Notes
+- Decided against using `fgets` for reading serial data to avoid blocking the hardware indefinitely.
+- Adapted `AGENTS.md` Rule 4 (double pointers) to use a single pointer for `serDataHandler`. This prioritizes the core philosophy of "Academic Simplicity" and readability since we are only mutating a pre-allocated struct, avoiding unnecessary pointer indirection.

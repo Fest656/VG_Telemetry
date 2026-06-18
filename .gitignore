@@ -23,7 +23,10 @@ x86/
 *.ilk
 *.log
 
-# === Clangd / LSP cache ===
 .cache/
 .clangd
 compile_commands.json
+
+.vscode/
+
+build/
