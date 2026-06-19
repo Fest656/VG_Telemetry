@@ -61,7 +61,10 @@ AssaultCube (x86)                       Host (C99 / Win API)                Rasp
 <p align="center">
   <i>Third live telemetry test — struct populated and then formatted with the telemetry functions</i>
 </p>
-[https://github.com/user-attachments/assets/b9e7738f-c16e-413c-b8de-f4cf0d1f48b3](https://github.com/user-attachments/assets/8e0fed14-849b-4491-9e1c-c4d07a786033)
+
+
+https://github.com/user-attachments/assets/1b1096cb-afb0-4ecd-b5f1-cdabee5d1925
+
 
 
 
