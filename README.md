@@ -25,8 +25,8 @@ AssaultCube (x86)                       Host (C99 / Win API)                Rasp
 ```
 ./
 ├── src/
-│   ├── main.c              # Entry point, main loop
-│   ├── memory/             # Windows process memory API
+│   ├── main.c              # Entry point for the host application
+│   ├── memory/             # Windows process memory API and offsets
 │   └── telemetry/          # Windows serial telemetry transmission
 ├── pico/                   # Source files for the MCU and the display unit
 │   └── telemetry_display/  # Includes data parsing, serial communication and display driver
