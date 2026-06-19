@@ -20,33 +20,25 @@ AssaultCube (x86)                       Host (C99 / Win API)                Rasp
 
 
 
-## Project Structure
+## Repo structure
 
 ```
 ./
 ├── src/
 │   ├── main.c              # Entry point, main loop
 │   ├── memory/             # Windows process memory API
-│   │   ├── memory.c/.h     # Attach, read, handle management
-│   │   └── offsets.h       # Memory offsets for game values
 │   └── telemetry/          # Windows serial telemetry transmission
-│       └── telemetry.c/.h  # Format and send state over COM port
 ├── pico/                   # Source files for the MCU and the display unit
-│   └── telemetry_display/
-│       ├── serial.c        # Parses incoming serial data
-│       ├── serial.h        # Serial communication protocol definitions
-│       └── state.h         # GameState structures matching the host
+│   └── telemetry_display/  # Includes data parsing, serial communication and display driver
 ├── docs/                   # Documents that follow the development of this project
-│   ├── context.md          # RE methodology & findings
-│   └── changelog.md        # Per-session development log
-└── VG_Telemetry.vcxproj    # Visual Studio project
+└── VG_Telemetry.slnx       # Used to build the project
 ```
 
 ## Constraints
 
-- **Read-only.** No `WriteProcessMemory`, no injection, no hooking.
-- **Offline only.** Single-player mode; no network interaction.
-- **Pure C99.** No C++, no third-party libraries beyond the Windows SDK.
+- **Read-only.** No `WriteProcessMemory`, no injection or process hooking.
+- **Offline only.** Only to be used in single-player mode; no network interaction.
+- **Pure C99.** No C++, no third-party libraries beyond the Windows API.
 
 ## Status
 
