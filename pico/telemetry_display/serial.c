@@ -3,6 +3,13 @@
 #include <stdio.h>
 #include "serial.h"
 
+/* \brief Return a character from stdin if there is one available within a timeout
+ * \ingroup pico_stdio
+ *
+ * \param timeout_us the timeout in microseconds, or 0 to not wait for a character if none available.
+ * \return the character from 0-255 or PICO_ERROR_TIMEOUT if timeout occurs
+int stdio_getchar_timeout_us(uint32_t timeout_us);
+ */
 int serLineRead(char *buffer, int maxLength) {
     int i = 0; // Index
     int c;
