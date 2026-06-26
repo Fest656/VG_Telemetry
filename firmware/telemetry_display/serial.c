@@ -18,7 +18,7 @@ int serLineRead(char *buffer, int maxLength) {
         if (c == PICO_ERROR_TIMEOUT) {
             return 0;
         }
-        if (c == '\n') { // End of line, fill buffer
+        if (c == '\n') { // EOL, fill buffer
             buffer[i] = '\0';
             return 1;
         }

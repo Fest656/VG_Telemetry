@@ -6,8 +6,7 @@
 
 // The protocol transports data in the following format: [ Health; Armour; Mag; Reserve ]
 void telStateFormat(GameState *state) {
-	// Used for testing, prints to the console
-	printf("HP:%d\nArmor:%d\nAmmo in mag:%d\nReserve ammo:%d\n", state->health, state->armor, state->magAmmo, state->reserveAmmo);
+    printf("HP:%d\nArmor:%d\nAmmo in mag:%d\nReserve ammo:%d\n", state->health, state->armor, state->magAmmo, state->reserveAmmo);
 }
 
 /*
@@ -15,16 +14,13 @@ https://learn.microsoft.com/en-us/windows/win32/devio/configuring-a-communicatio
 https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilea
 */
 HANDLE telOpenPort(const char *portName) {
-	HANDLE comHandle;
-	comHandle = CreateFile(portName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
-	if(comHandle == INVALID_HANDLE_VALUE){
-		printf ("Error: Create file did not obtain a handle to COM1.\n");
-		return INVALID_HANDLE_VALUE;
-	}
-	return comHandle;
-	// The caller has responsibility over the handle
+    HANDLE comHandle = CreateFile(portName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+    if (comHandle == INVALID_HANDLE_VALUE) {
+        printf("Error: Create file did not obtain a handle to COM1.\n");
+        return INVALID_HANDLE_VALUE;
+    }
+    return comHandle;
 }
-
 
 /*
 https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-dcb
@@ -34,9 +30,9 @@ https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-setcommst
 https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getcommstate
 */
 int telSetPort(HANDLE comHandle) {
-	BOOL configState;
-	// Initialize the timeout struct zeroed out in all its memory
-	COMMTIMEOUTS comTimeOut;
+    BOOL configState;
+    // Initialize the timeout struct zeroed out in all its memory
+    COMMTIMEOUTS comTimeOut;
     SecureZeroMemory(&comTimeOut, sizeof(COMMTIMEOUTS));
     // In milliseconds
     comTimeOut.ReadIntervalTimeout = 50;
@@ -44,43 +40,43 @@ int telSetPort(HANDLE comHandle) {
     comTimeOut.ReadTotalTimeoutMultiplier = 10;
     comTimeOut.WriteTotalTimeoutConstant = 50;
     comTimeOut.WriteTotalTimeoutMultiplier = 10;
-	// Initialize the DCB struct zeroed out in all its memory
-	DCB dcb;
-	DWORD dcbLen = sizeof(DCB);
-	SecureZeroMemory(&dcb, dcbLen);
+    // Initialize the DCB struct zeroed out in all its memory
+    DCB dcb;
+    DWORD dcbLen = sizeof(DCB);
+    SecureZeroMemory(&dcb, dcbLen);
 
-	configState = GetCommState(comHandle, &dcb);
-	if(configState == FALSE){
-		printf("Error: Failed to get current COM configuration");
-		return 0;
-	}
+    configState = GetCommState(comHandle, &dcb);
+    if (configState == FALSE) {
+        printf("Error: Failed to get current COM configuration");
+        return 0;
+    }
 
-	// Configure the DCB struct
-	dcb.DCBlength = dcbLen;
-	dcb.BaudRate = BAUD_RATE;     
-	dcb.ByteSize = DATA_BITS;             
-	dcb.Parity   = NOPARITY;      
-	dcb.StopBits = ONESTOPBIT;    
-	
-	configState = SetCommState(comHandle, &dcb);
-	if(configState == FALSE){
-		printf("Error: Failed to set COM configuration");
-		return 0;
-	}
+    // Configure the DCB struct
+    dcb.DCBlength = dcbLen;
+    dcb.BaudRate = BAUD_RATE;     
+    dcb.ByteSize = DATA_BITS;             
+    dcb.Parity   = NOPARITY;      
+    dcb.StopBits = ONESTOPBIT;    
+    
+    configState = SetCommState(comHandle, &dcb);
+    if (configState == FALSE) {
+        printf("Error: Failed to set COM configuration");
+        return 0;
+    }
 
-	configState = SetCommTimeouts(comHandle, &comTimeOut);
-	if(configState == FALSE){
-		printf("Error: Failed to set COM timeout configuration");
-		return 0;
-	}
+    configState = SetCommTimeouts(comHandle, &comTimeOut);
+    if (configState == FALSE) {
+        printf("Error: Failed to set COM timeout configuration");
+        return 0;
+    }
 
-	configState = GetCommState(comHandle, &dcb);
-	if(configState == FALSE){
-		printf("Error: GetCommState failed after setting our configuration");
-		return 0;
-	}
+    configState = GetCommState(comHandle, &dcb);
+    if (configState == FALSE) {
+        printf("Error: GetCommState failed after setting our configuration");
+        return 0;
+    }
 
-	return 1;
+    return 1;
 }
 
 /*
@@ -95,7 +91,7 @@ int telSendState(GameState *state, HANDLE comHandle) {
     DWORD bytesWritten;
     BOOL writeStatus = WriteFile(comHandle, buffer, bytesToWrite, &bytesWritten, NULL);
     
-    if(writeStatus == FALSE){
+    if (writeStatus == FALSE) {
         printf("Error: Failed to write to COM port\n");
         return 0;
     }

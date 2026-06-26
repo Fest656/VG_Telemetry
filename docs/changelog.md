@@ -57,3 +57,11 @@
 ### Notes
 - Decided against using `fgets` for reading serial data to avoid blocking the hardware indefinitely.
 - Adapted `AGENTS.md` Rule 4 (double pointers) to use a single pointer for `serDataHandler`. This prioritizes the core philosophy of "Academic Simplicity" and readability since we are only mutating a pre-allocated struct, avoiding unnecessary pointer indirection.
+
+## [26-06-2026] — Host Memory Refactor
+
+### Added
+- `memory.c`/`memory.h`: Added `memReadPtr` to correctly handle reading 32-bit pointers from the target process and safely casting them to `uintptr_t` for the 64-bit host environment. 
+
+### Changed
+- `main.c`: Refactored memory traversal logic to use `memReadPtr` when resolving pointer chains (e.g., `localPlayer`, `activeWeapon`), keeping `memReadInt` strictly for reading final integer values (e.g., `health`, `armor`).

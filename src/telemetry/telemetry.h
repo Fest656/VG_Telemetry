@@ -20,16 +20,15 @@ typedef struct GameState {
 } GameState;
 
 // This function is responsible for applying the correct ASCII format to any game state, only used for the console for debugging purposed
-void telStateFormat(GameState* state);
+void telStateFormat(GameState *state);
 
 // This function returns a handle to the desired COM port using createFile
 HANDLE telOpenPort(const char *portName);
 
 // This function is called to set the desired control settings of a serial communications device. This is done through the DCB struct
-int telSetPort( HANDLE comHandle);
+int telSetPort(HANDLE comHandle);
 
 // Calls the formatting function on the game state and sends it over the serial connection
 int telSendState(GameState *state, HANDLE comHandle);
-
 
 #endif
