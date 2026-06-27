@@ -145,7 +145,7 @@ For the OLED display, we decided to implement a minimal SSD1306 driver, focusing
 * [Raspberry Pi Pico SSD1306 Example](https://github.com/raspberrypi/pico-examples/tree/master/i2c/ssd1306_i2c) - We will port the initialisation sequence and the `WriteString`/`WriteChar` functions from this example.
 * [daschr/pico-ssd1306](https://github.com/daschr/pico-ssd1306/tree/main) - An alternative lightweight library that serves as a good educational reference for structuring an OLED driver.
 * [Pico SDK Runtime API](https://www.raspberrypi.com/documentation/pico-sdk/runtime.html) - Documentation for the SDK's C runtime.
-* [pico_stdio/include/pico/stdio.h](https://github.com/raspberrypi/pico-sdk/blob/master/src/rp2_common/pico_stdio/include/pico/stdio.h) - Source header for stdio functions, critical for understanding serial polling timeouts (e.g., `getchar_timeout_us`).
+* [Pico SDK source code](https://github.com/raspberrypi/pico-sdk) - Source files for Pico SDK.
 
 ---
 

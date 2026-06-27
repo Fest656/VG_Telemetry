@@ -7,10 +7,10 @@ Built as a personal project to learn  reverse engineering, Windows process inter
 ## How It Works
 
 ```
-AssaultCube (x86)                       Host (C99 / Win API)                Raspberry Pi Pico
+AssaultCube (x86)                       Host (C / Win API)            Raspberry Pi Pico
 ┌──────────────┐     ReadProcessMemory       ┌──────┐     Serial/USB     ┌──────────┐
 │ Process RAM  │  ─────────────────────────► │ Host │ ─────────────────► │ Display  │
-└──────────────┘  (read-only, no injection)  └──────┘   115200 baud      └──────────┘
+└──────────────┘       (read-only)           └──────┘    115200 baud     └──────────┘
 ```
 
 1. **Reverse engineer** memory offsets with Cheat Engine
