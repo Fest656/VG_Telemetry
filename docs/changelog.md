@@ -65,3 +65,13 @@
 
 ### Changed
 - `main.c`: Refactored memory traversal logic to use `memReadPtr` when resolving pointer chains (e.g., `localPlayer`, `activeWeapon`), keeping `memReadInt` strictly for reading final integer values (e.g., `health`, `armor`).
+
+## [27-06-2026] — Hardware Display Preparation
+### Added
+- `ssd1306.c`/`ssd1306.h`: Ported the Raspberry Pi Pico I2C ssd1306 display driver but stripped of its more complicated drawing primitives.
+
+## [28-06-2026] — Hardware Display Implementation
+### Added
+- `ssd1306.c`/`ssd1306.h`: Created wrapper functions (`ssd1306_setup` and `ssd1306_render_full`) to abstract raw I2C hardware initialization and render structs, improving encapsulation.
+### Changed
+- `telemetry_display.c`: Integrated the SSD1306 driver into the main loop. Parses serial data, formats it into string buffers using `sprintf`, and pushes the frame to the OLED display.

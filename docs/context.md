@@ -86,6 +86,8 @@ We implemented a custom memory API wrapper using `CreateToolhelp32Snapshot`, `Op
 * **`memGetModuleBase`**: Takes a module snapshot of the target process using `TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32` (essential for allowing our 64-bit host to properly read a 32-bit process like AssaultCube), iterates to find the module, and fetches its base address.
 * **`memReadInt`**: A safe wrapper around `ReadProcessMemory` to read a single `int` from a dynamic address. Casts the `uintptr_t` address to `LPCVOID` and the output pointer to `LPVOID` to satisfy strict Windows API signature requirements.
 * **`memReadPtr`**: Specifically designed to read pointer addresses from the 32-bit AssaultCube process. It safely reads exactly 4 bytes into a `uint32_t` to prevent buffer over-reads, and then casts it to the host-compatible `uintptr_t` for safe pointer arithmetic in the 64-bit host application.
+   > **Note:** While `memReadInt`  worked for reading pointers because both an `int` and a 32-bit pointer are 4 bytes long, we decided to separate the act of reading a *memory address* (`memReadPtr`) from reading a *game value* (`memReadInt`) to simplify the way these functiosn interact. 
+   Also makes it more explicit that we are bridging a x86 target with a x64 host.
 </details>
 
 Our testing in `main.c` proved that we can successfully traverse the pointer chains, like (`[ac_client.exe + 0x17E0A8] + 0xEC`) by performing two sequential memory reads and reading the health value.
@@ -157,3 +159,10 @@ For the OLED display, we decided to implement a minimal SSD1306 driver, focusing
 * **Parsing Data:** We used `sscanf` to parse the CSV string. Crucially, we implemented strict validation by checking the return value of `sscanf`. If it does not successfully match all 4 expected variables, the packet was corrupted.
 * **Struct:** We defined the `GameState` struct in `state.h`. For simplicity and readability, we pass a standard single pointer (`GameState *state`) to the parser function, as no dynamic memory allocation or pointer re-assignment is occurring in the MCUs.
 * **Echo Testing:** Since the Pico is configured for "Console over USB", we implemented a `serLineWrite` function that uses standard `printf` to send the parsed values back up the USB cable to the host application.
+
+## SSD1306 Display firmware
+
+To push our telemetry data onto the physical display, we ported a stripped-down SSD1306 I2C driver.
+
+* **What we did:** We used the official Raspberry Pi Pico SSD1306 example as a blueprint. We extracted the complex hex-code initialization sequence and the basic `i2c_write_blocking` wrappers, but we stripped out all graphics primitives (line drawing, circles, scrolling) and images, leaving only a minimal text-engine capable of mapping ASCII characters to an 8x8 pixel font array.
+* **Encapsulation:** To increase readability and encapsulation we created wrapper functions (`ssd1306_setup` and `ssd1306_render_full`). This hides raw hardware logic (like GPIO pin mapping and `render_area` boundaries) from the main `telemetry_display.c`.

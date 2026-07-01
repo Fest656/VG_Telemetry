@@ -45,9 +45,9 @@ AssaultCube (x86)                       Host (C / Win API)            Raspberry 
 | Phase | State |
 |---|---|
 | RE & Memory Mapping | ✅ Health/Armor/Ammo offset verified |
-| Host Application | ✅ Developed but without the hardware side implemented |
-| Serial Communication | ⏳ Pending |
-| Pico Firmware | ⏳ Pending |
+| Host Application | ✅ Developed and tested on the host side |
+| Serial Communication | ⏳ Testing pending |
+| Pico Firmware | ⏳ Testing pending |
 
 
 <p align="center">

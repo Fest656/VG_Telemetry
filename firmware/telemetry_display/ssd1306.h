@@ -3,9 +3,10 @@
 
 /*
  * SSD1306 OLED Display Controller I2C Driver.
- * Adapted from the Raspberry Pi Trading Ltd. example codebase.
+ * Adapted from the Raspberry Pi and @daschr's example github repos.
  * Provides the low-level functions and configuration macros required to
  * initialize, manage, and draw to the OLED screen.
+ * Goto docs/context for more info
  */
 
 #include <stdint.h>
@@ -15,6 +16,9 @@
 #define SSD1306_WIDTH               128
 #define SSD1306_I2C_ADDR            0x3C
 #define SSD1306_I2C_CLK             400
+#define SSD1306_I2C_PORT            i2c0
+#define SSD1306_I2C_SDA             8
+#define SSD1306_I2C_SCL             9
 
 #define SSD1306_PAGE_HEIGHT         8
 #define SSD1306_NUM_PAGES           (SSD1306_HEIGHT / SSD1306_PAGE_HEIGHT)
@@ -98,5 +102,36 @@ void SSD1306_init();
 Configures the column and page boundaries and transmits the buffer to target render area.
 */
 void render(uint8_t *buf, struct render_area *area);
+
+/*
+Translates an ASCII character into its corresponding numerical index 
+within the 8x8 font array.
+*/
+int GetFontIndex(uint8_t ch);
+
+/*
+Writes a single character to the display
+*/
+void WriteChar(uint8_t *buf, int16_t x, int16_t y, uint8_t ch);
+
+/*
+Uses WriteChar to write an entire string to the display
+*/
+void WriteString(uint8_t *buf, int16_t x, int16_t y, char *str);
+
+/*
+Clears the display by running memset 0 on the frame buffer which is an array withg the size of SSD1306_BUF_LEN
+*/
+void ssd1306_clear(uint8_t *buffer);
+
+/*
+Initializes the RP2040 GPIO pins for I2C communication.
+*/
+void ssd1306_setup(void);
+
+/*
+Calculates the render area for the entire screen and renders the given buffer.
+*/
+void ssd1306_render_full(uint8_t *buffer);
 
 #endif

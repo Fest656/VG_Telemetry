@@ -4,12 +4,10 @@
  * SPDX-License-Identifier: BSD-3-Clause
 */
 
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include "pico/stdlib.h"
-#include "pico/binary_info.h"
+#include "hardware/gpio.h"
 #include "hardware/i2c.h"
 #include "ssd1306_font.h"
 #include "ssd1306.h"
@@ -135,7 +133,7 @@ void render(uint8_t *buf, struct render_area *area) {
     SSD1306_send_buf(buf, area->buflen);
 }
 
-static inline int GetFontIndex(uint8_t ch) {
+int GetFontIndex(uint8_t ch) {
     if (ch >= 'A' && ch <='Z') {
         return  ch - 'A' + 1;
     }
@@ -145,7 +143,7 @@ static inline int GetFontIndex(uint8_t ch) {
     else return  0; // Not got that char so space.
 }
 
-static void WriteChar(uint8_t *buf, int16_t x, int16_t y, uint8_t ch) {
+void WriteChar(uint8_t *buf, int16_t x, int16_t y, uint8_t ch) {
     if (x > SSD1306_WIDTH - 8 || y > SSD1306_HEIGHT - 8)
         return;
 
@@ -161,7 +159,7 @@ static void WriteChar(uint8_t *buf, int16_t x, int16_t y, uint8_t ch) {
     }
 }
 
-static void WriteString(uint8_t *buf, int16_t x, int16_t y, char *str) {
+void WriteString(uint8_t *buf, int16_t x, int16_t y, char *str) {
     // Cull out any string off the screen
     if (x > SSD1306_WIDTH - 8 || y > SSD1306_HEIGHT - 8)
         return;
@@ -170,4 +168,30 @@ static void WriteString(uint8_t *buf, int16_t x, int16_t y, char *str) {
         WriteChar(buf, x, y, *str++);
         x+=8;
     }
+}
+
+/*
+https://learn.microsoft.com/pt-br/cpp/c-runtime-library/reference/memset-wmemset?view=msvc-170
+*/
+void ssd1306_clear(uint8_t *buffer) {
+    memset(buffer, 0, SSD1306_BUF_LEN);
+}
+
+void ssd1306_setup(void) {
+    i2c_init(SSD1306_I2C_PORT, SSD1306_I2C_CLK * 1000);
+    gpio_set_function(SSD1306_I2C_SDA, GPIO_FUNC_I2C);
+    gpio_set_function(SSD1306_I2C_SCL, GPIO_FUNC_I2C);
+    gpio_pull_up(SSD1306_I2C_SDA);
+    gpio_pull_up(SSD1306_I2C_SCL);
+}
+
+void ssd1306_render_full(uint8_t *buffer) {
+    struct render_area frame_area = {
+        .start_col = 0,
+        .end_col = SSD1306_WIDTH - 1,
+        .start_page = 0,
+        .end_page = SSD1306_NUM_PAGES - 1
+    };
+    calc_render_area_buflen(&frame_area);
+    render(buffer, &frame_area);
 }
