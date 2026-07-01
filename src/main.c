@@ -5,72 +5,134 @@
 #include <windows.h>
 
 #define PROCESS_NAME "ac_client.exe"
+#define TELEMETRY_POLL_RATE_MS 5000
+#define MAX_CONSECUTIVE_FAILURES 5
 
-int main() {
-    // Initialize memGetProcessId
-    DWORD pid;
-    const char *processName = PROCESS_NAME;
-    if (memGetProcessId(processName, &pid) == 0) {
+// Helper function to attach to the process by name, retrieving handle and module base address.
+// Returns 1 on success, 0 on failure. On success, writes through output pointer parameters.
+int processAttach(const char *processName, HANDLE *handlePtr, uintptr_t *baseAddrPtr) {
+    DWORD pid = 0;
+    if (!memGetProcessId(processName, &pid)) {
         return 0;
     }
+    // DWORD is unsigned long - lu
     printf("Found PID for %s: %lu\n", processName, pid);
 
-    // Initialize memOpenProcess
-    HANDLE handle;
-    if (memOpenProcess(pid, &handle) == 0) {
+    HANDLE handle = NULL;
+    if (!memOpenProcess(pid, &handle)) {
         return 0;
     }
-    // Main is now responsible for the open handle
-    printf("Opened handle for %s: 0x%p\n", processName, (void *)handle);
+    // A HANDLE is defined as a void * so its safe to use with %p
+    printf("Opened handle for %s: 0x%p\n", processName, handle);
 
-    // Initialize memGetModuleBase
-    uintptr_t baseAddr;
-    if (memGetModuleBase(pid, processName, &baseAddr) == 0) {
+    uintptr_t baseAddr = 0;
+    if (!memGetModuleBase(pid, processName, &baseAddr)) {
         CloseHandle(handle);
         return 0;
     }
+    // We need the cast because we are passing a 64 bit value to be printed as 32 bits
     printf("Base address for %s: 0x%08X\n", processName, (unsigned int)baseAddr);
 
+    *handlePtr = handle;
+    *baseAddrPtr = baseAddr;
+    return 1;
+}
+
+// Helper function to find the local player address from module base address.
+// Returns 1 on success, 0 on failure. On success, writes through localPlayerPtr.
+// Whoever calls this function is responsible for the handle if it fails.
+int getLocalPlayer(HANDLE handle, uintptr_t baseAddr, uintptr_t *localPlayerPtr) {
+    uintptr_t localPlayer = 0;
+    if (!memReadPtr32(handle, baseAddr + LOCAL_PLAYER, &localPlayer)) {
+        return 0;
+    }
+    *localPlayerPtr = localPlayer;
+    printf("Found local player at: 0x%08X\n", (unsigned int)localPlayer);
+    return 1;
+}
+
+
+// Helper function to read the complete game state from the target process.
+// Returns 1 on success, 0 on failure. On success, writes through statePtr.
+int getGameState(HANDLE handle, uintptr_t localPlayer, GameState *statePtr) {
+    uintptr_t activeWeapon = 0;
+    int health = 0;
+    int armor = 0;
+    uintptr_t magAmmoPointer = 0;
+    int magAmmo = 0;
+    uintptr_t reserveAmmoPointer = 0;
+    int reserveAmmo = 0;
+
+    if (!memReadPtr32(handle, localPlayer + OFFSET_WEAPON, &activeWeapon)) {
+        return 0;
+    }
+
+    if (!memReadInt(handle, localPlayer + OFFSET_HEALTH, &health)) {
+        return 0;
+    }
+
+    if (!memReadInt(handle, localPlayer + OFFSET_ARMOR, &armor)) {
+        return 0;
+    }
+
+    if (!memReadPtr32(handle, activeWeapon + OFFSET_MAGAMMO, &magAmmoPointer)) {
+        return 0;
+    }
+
+    if (!memReadInt(handle, magAmmoPointer, &magAmmo)) {
+        return 0;
+    }
+
+    if (!memReadPtr32(handle, activeWeapon + OFFSET_RESERVEAMMO, &reserveAmmoPointer)) {
+        return 0;
+    }
+
+    if (!memReadInt(handle, reserveAmmoPointer, &reserveAmmo)) {
+        return 0;
+    }
+
+    statePtr->health = health;
+    statePtr->armor = armor;
+    statePtr->magAmmo = magAmmo;
+    statePtr->reserveAmmo = reserveAmmo;
+
+    return 1;
+}
+
+int main(void) {
+    // Get the handle and the base address
+    HANDLE handle;
+    uintptr_t baseAddr;
+    if (!processAttach(PROCESS_NAME, &handle, &baseAddr)) {
+        return 0;
+    }
+
+    // Get the local player
     uintptr_t localPlayer;
-    if (memReadPtr(handle, baseAddr + LOCAL_PLAYER, &localPlayer) == 0) {
+    if (!getLocalPlayer(handle, baseAddr, &localPlayer)) {
         CloseHandle(handle);
         return 0;
     }
-    printf("Found local player at: 0x%08X\n", (unsigned int)localPlayer);
 
     GameState state;
-    uintptr_t activeWeapon;
-    uintptr_t magAmmoPointer;
-    uintptr_t reserveAmmoPointer;
-
+    int failCount = 0;
     while (1) {
-        // Read active weapon pointer
-        if (memReadPtr(handle, localPlayer + OFFSET_WEAPON, &activeWeapon) == 0) {
-            printf("Failed to read the active weapon!\n");
-            CloseHandle(handle);
-            return 0;
+        if (getGameState(handle, localPlayer, &state)) {
+            failCount = 0;
+            telStateFormat(&state);
+        } 
+        else {
+            failCount++;
+            printf("Warning: Failed to read complete game state this tick.\n");
         }
-
-        // Read health
-        memReadInt(handle, localPlayer + OFFSET_HEALTH, &state.health);
-
-        // Read armor
-        memReadInt(handle, localPlayer + OFFSET_ARMOR, &state.armor);
-
-        // Read mag ammo (requires another dereference)
-        if (memReadPtr(handle, activeWeapon + OFFSET_MAGAMMO, &magAmmoPointer) != 0) {
-            memReadInt(handle, magAmmoPointer, &state.magAmmo);
+        if (failCount == MAX_CONSECUTIVE_FAILURES) {
+            printf("Error: Failed to read game state for five ticks in a row, exiting...\n");
+            break;
         }
-
-        // Read reserve ammo (requires another dereference)
-        if (memReadPtr(handle, activeWeapon + OFFSET_RESERVEAMMO, &reserveAmmoPointer) != 0) {
-            memReadInt(handle, reserveAmmoPointer, &state.reserveAmmo);
-        }
-
-        telStateFormat(&state);
-        Sleep(5000);
+        Sleep(TELEMETRY_POLL_RATE_MS);
     }
     
     CloseHandle(handle);
     return 1;
 }
+

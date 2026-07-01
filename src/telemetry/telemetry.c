@@ -16,7 +16,8 @@ https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfil
 HANDLE telOpenPort(const char *portName) {
     HANDLE comHandle = CreateFile(portName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
     if (comHandle == INVALID_HANDLE_VALUE) {
-        printf("Error: Create file did not obtain a handle to COM1.\n");
+        DWORD error = GetLastError();
+        printf("Error: telOpenPort could not open port '%s'. Win32 Error: %lu\n", portName, error);
         return INVALID_HANDLE_VALUE;
     }
     return comHandle;
@@ -47,7 +48,8 @@ int telSetPort(HANDLE comHandle) {
 
     configState = GetCommState(comHandle, &dcb);
     if (configState == FALSE) {
-        printf("Error: Failed to get current COM configuration");
+        DWORD error = GetLastError();
+        printf("Error: telSetPort could not get current COM configuration. Win32 Error: %lu\n", error);
         return 0;
     }
 
@@ -60,19 +62,22 @@ int telSetPort(HANDLE comHandle) {
     
     configState = SetCommState(comHandle, &dcb);
     if (configState == FALSE) {
-        printf("Error: Failed to set COM configuration");
+        DWORD error = GetLastError();
+        printf("Error: telSetPort could not apply COM configuration. Win32 Error: %lu\n", error);
         return 0;
     }
 
     configState = SetCommTimeouts(comHandle, &comTimeOut);
     if (configState == FALSE) {
-        printf("Error: Failed to set COM timeout configuration");
+        DWORD error = GetLastError();
+        printf("Error: telSetPort could not apply COM timeout configuration. Win32 Error: %lu\n", error);
         return 0;
     }
 
     configState = GetCommState(comHandle, &dcb);
     if (configState == FALSE) {
-        printf("Error: GetCommState failed after setting our configuration");
+        DWORD error = GetLastError();
+        printf("Error: telSetPort GetCommState failed after applying configuration. Win32 Error: %lu\n", error);
         return 0;
     }
 
@@ -92,7 +97,8 @@ int telSendState(GameState *state, HANDLE comHandle) {
     BOOL writeStatus = WriteFile(comHandle, buffer, bytesToWrite, &bytesWritten, NULL);
     
     if (writeStatus == FALSE) {
-        printf("Error: Failed to write to COM port\n");
+        DWORD error = GetLastError();
+        printf("Error: telSendState failed to write to COM port. Bytes written: %lu. Win32 Error: %lu\n", bytesWritten, error);
         return 0;
     }
     

@@ -11,10 +11,8 @@
 #define OFFSET_HEALTH 0xEC
 #define OFFSET_ARMOR  0xF0
 
-// Offsets that point to the values, these come from the active weapon, from the local player (must be dereferenced)
+// Offsets from the active weapon (must be dereferenced), from the local player (must be dereferenced)
 #define OFFSET_MAGAMMO 0x14
 #define OFFSET_RESERVEAMMO 0x10
-
-
 
 #endif

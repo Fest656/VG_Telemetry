@@ -23,6 +23,6 @@ int memGetModuleBase(DWORD pid, const char *moduleName, uintptr_t *baseAddressPt
 int memReadInt(HANDLE processHandle, uintptr_t address, int *valuePtr);
 
 // Reads a 32-bit pointer address from the target process and converts it to a host-sized uintptr_t.
-int memReadPtr(HANDLE processHandle, uintptr_t address, uintptr_t *valuePtr);
+int memReadPtr32(HANDLE processHandle, uintptr_t address, uintptr_t *valuePtr);
 
 #endif
