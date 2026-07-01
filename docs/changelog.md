@@ -75,3 +75,8 @@
 - `ssd1306.c`/`ssd1306.h`: Created wrapper functions (`ssd1306_setup` and `ssd1306_render_full`) to abstract raw I2C hardware initialization and render structs, improving encapsulation.
 ### Changed
 - `telemetry_display.c`: Integrated the SSD1306 driver into the main loop. Parses serial data, formats it into string buffers using `sprintf`, and pushes the frame to the OLED display.
+
+## [28-06-2026]
+### Changed
+- `main.c`: Code cleanup.
+- `memory.c`/`telemetry.c`: Added better error handling through the usage of GetLastError for WinAPI functions.
