@@ -1,4 +1,4 @@
-# === Visual Studio ===
+# Visual Studio
 .vs/
 *.suo
 *.user
@@ -10,7 +10,7 @@
 *.opendb
 ipch/
 
-# === Build outputs ===
+# build
 bin/
 obj/
 Debug/
@@ -30,3 +30,4 @@ compile_commands.json
 .vscode/
 
 build/
+

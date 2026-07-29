@@ -1,24 +1,33 @@
 # AssaultCube Telemetry Tracker
 
 A real-time hardware telemetry system that reads live game state from **AssaultCube** via the Window's API, then transmits it over serial to a **Raspberry Pi Pico** microcontroller driving physical displays.
-
+Written in C using the Windows API and the Pico SDK, parses dynamic pointer chains to extract live game state and transmits it over USB to be displayed on a OLED.
+The host application is strictly read-only and written for AssaultCube version 1.3.0.2.
 Built as a personal project to learn  reverse engineering, Windows process internals, and embedded systems.
+
+
 
 ## How It Works
 
+```mermaid
+flowchart LR
+    A[AssaultCube RAM<br>x86 Process] -- ReadProcessMemory<br> --> B[Host App<br>C / WinAPI]
+    B -- Serial/USB<br> --> C[Raspberry Pi Pico<br>]
+    C -- I2C Draw Commands --> D[SSD1306<br>OLED Display]
 ```
-AssaultCube (x86)                       Host (C / Win API)            Raspberry Pi Pico
-┌──────────────┐     ReadProcessMemory       ┌──────┐     Serial/USB     ┌──────────┐
-│ Process RAM  │  ─────────────────────────► │ Host │ ─────────────────► │ Display  │
-└──────────────┘       (read-only)           └──────┘    115200 baud     └──────────┘
-```
 
-1. **Reverse engineer** memory offsets with Cheat Engine
-2. **Read** live values (health, armour, ammo) through static pointer chains
-3. **Transmit** via ASCII serial protocol
-4. **Display** on physical hardware driven by the Raspberry Pi Pico and a SSD1306
+## Build Modes
 
+The application behavior is controlled via `#define BUILD_MODE` in [`config/config.h`](config/config.h):
 
+* **`E2E` (End-to-End, Default):** Host app reads game memory and sends CSV data over COM port, Pico parses packets and renders live stats on the SSD1306 OLED screen.
+* **`PICO_ECHO`:** Hardware testing mode. Host app sends telemetry to the Pico, and the Pico echoes parsed stats back to the PC over USB serial for verification.
+* **`CONSOLE`:** Host-only debugging mode. Host app reads memory and prints formatted telemetry directly to the PC terminal without requiring COM port access.
+
+## Getting Started
+All setup documentation can be found in the [`docs/`](docs/) directory:
+* **[Setup & Installation Guide](docs/setup.md):** Step-by-step instructions on cloning the repo, compiling the host application and firmware, and running the telemetry tracker.
+* **[Hardware & Wiring](docs/hardware.md):** The physical schematic, pinout tables, and a  list for the hardware needed. 
 
 ## Repo structure
 
@@ -28,26 +37,20 @@ AssaultCube (x86)                       Host (C / Win API)            Raspberry 
 │   ├── main.c              # Entry point for the host application
 │   ├── memory/             # Windows process memory API and offsets
 │   └── telemetry/          # Windows serial telemetry transmission
-├── pico/                   # Source files for the MCU and the display unit
+├── config
+│  ├── config.h             # Header that defines project wide macros
+├── firmware/                   
 │   └── telemetry_display/  # Includes data parsing, serial communication and display driver
 ├── docs/                   # Documents that follow the development of this project
-└── VG_Telemetry.slnx       # Used to build the project
+└── VG_Telemetry.slnx       # Visual Studio solution to build
 ```
 
-## Constraints
+## Limitations and Possible Improvements
 
-- **Read-only.** No `WriteProcessMemory`, no injection or process hooking.
-- **Offline only.** Only to be used in single-player mode; no network interaction.
-- **Pure C99.** No C++, no third-party libraries beyond the Windows API.
-
-## Status
-
-| Phase | State |
-|---|---|
-| RE & Memory Mapping | ✅ Health/Armor/Ammo offset verified |
-| Host Application | ✅ Developed and tested on the host side |
-| Serial Communication | ⏳ Testing pending |
-| Pico Firmware | ⏳ Testing pending |
+* **Version:** All memory offsets are hardcoded specifically for AssaultCube v1.3.0.2 (32-bit).
+* **OS:** As the project  was built using the Window's API, it only works natively on Windows.
+* **COM Port Handling:** The serial communication requires manual or hardcoded COM port selection. Implementing auto-detection and hot-plug reconnection would improve this.
+* **OLED Character Set:** The SSD1306 driver uses a minimal 8x8 ASCII font array. Special symbols (such as `:`, `/`, or icons) are not available, limiting graphical formatting. This can also be improved.
 
 
 <p align="center">
@@ -58,8 +61,5 @@ AssaultCube (x86)                       Host (C / Win API)            Raspberry 
 https://github.com/user-attachments/assets/1b1096cb-afb0-4ecd-b5f1-cdabee5d1925
 
 
-
-
-## License
-
-This project is developed for academic purposes only. AssaultCube is an open-source game; no proprietary software is modified or redistributed.
+> [!NOTE]
+> This project is developed for academic purposes only. AssaultCube is an open-source game; no proprietary software is modified or redistributed.

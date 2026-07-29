@@ -1,26 +1,23 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
-#define TEL_BUFFER 32
-
 #include "state.h"
 
+// Serial read timeout for getchar_timeout_us (in microseconds)
+#define SERIAL_CHAR_TIMEOUT_US 100
 
-/*
-This function is responsible for reading a single line (newline detection)
-It places the line read into buffer, for embedded, getchar is better than fgets
-*/
+// Maximum line buffer size for incoming telemetry packets
+#define TEL_BUFFER 32
+
+// Reads one newline-terminated line from USB serial into buffer.
+// Returns 1 if a complete line was read, 0 on timeout or buffer full (no complete line available).
 int serLineRead(char *buffer, int maxLength);
 
-/*
-This function is responsible for parsing data in a string and populating a GameState struct with it
-The string should follow the formatting defined in telemetry.h
-*/
+// Parses a CSV telemetry line (format: "health;armor;magAmmo;reserveAmmo;killCount;deathCount") into statePtr. 
+// Returns 1 if all 6 fields were parsed successfully, 0 on malformed input.
 int serDataHandler(GameState *statePtr, const char *buffer);
 
-/*
-This function echos back to the host program a single line, important to remember we are using a console over USB pico configuration
-*/
-void serLineWrite(GameState *state);
+// Echoes the parsed game state back to the host over USB serial for debugging.
+void serLineWrite(GameState *statePtr);
 
 #endif

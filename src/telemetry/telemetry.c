@@ -4,23 +4,24 @@
 
 // https://learn.microsoft.com/en-us/previous-versions/ms810467(v=msdn.10)?redirectedfrom=MSDN
 
-// The protocol transports data in the following format: [ Health; Armour; Mag; Reserve ]
+// The protocol transports data in the following format: [ Health; Armor; Mag; Reserve; Kills; Deaths ]
 void telStateFormat(GameState *state) {
-    printf("HP:%d\nArmor:%d\nAmmo in mag:%d\nReserve ammo:%d\n", state->health, state->armor, state->magAmmo, state->reserveAmmo);
+    printf("HP:%d\nArmor:%d\nAmmo in mag:%d\nReserve ammo:%d\nKills:%d\nDeaths:%d\n", state->health, state->armor, state->magAmmo, state->reserveAmmo, state->killCount, state->deathCount);
 }
 
 /*
 https://learn.microsoft.com/en-us/windows/win32/devio/configuring-a-communications-resource
 https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilea
 */
-HANDLE telOpenPort(const char *portName) {
+int telOpenPort(const char *portName, HANDLE *handlePtr) {
     HANDLE comHandle = CreateFile(portName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
     if (comHandle == INVALID_HANDLE_VALUE) {
         DWORD error = GetLastError();
         printf("Error: telOpenPort could not open port '%s'. Win32 Error: %lu\n", portName, error);
-        return INVALID_HANDLE_VALUE;
+        return 0;
     }
-    return comHandle;
+    *handlePtr = comHandle;
+    return 1;
 }
 
 /*
@@ -35,47 +36,46 @@ int telSetPort(HANDLE comHandle) {
     // Initialize the timeout struct zeroed out in all its memory
     COMMTIMEOUTS comTimeOut;
     SecureZeroMemory(&comTimeOut, sizeof(COMMTIMEOUTS));
-    // In milliseconds
-    comTimeOut.ReadIntervalTimeout = 50;
-    comTimeOut.ReadTotalTimeoutConstant = 50;
-    comTimeOut.ReadTotalTimeoutMultiplier = 10;
-    comTimeOut.WriteTotalTimeoutConstant = 50;
-    comTimeOut.WriteTotalTimeoutMultiplier = 10;
+    comTimeOut.ReadIntervalTimeout = READ_INTERVAL_TIMEOUT_MS;
+    comTimeOut.ReadTotalTimeoutConstant = READ_TOTAL_TIMEOUT_CONSTANT_MS;
+    comTimeOut.ReadTotalTimeoutMultiplier = READ_TOTAL_TIMEOUT_MULT_MS;
+    comTimeOut.WriteTotalTimeoutConstant = WRITE_TOTAL_TIMEOUT_CONSTANT_MS;
+    comTimeOut.WriteTotalTimeoutMultiplier = WRITE_TOTAL_TIMEOUT_MULT_MS;
     // Initialize the DCB struct zeroed out in all its memory
     DCB dcb;
-    DWORD dcbLen = sizeof(DCB);
+    size_t dcbLen = sizeof(DCB);
     SecureZeroMemory(&dcb, dcbLen);
 
     configState = GetCommState(comHandle, &dcb);
-    if (configState == FALSE) {
+    if (!configState) {
         DWORD error = GetLastError();
         printf("Error: telSetPort could not get current COM configuration. Win32 Error: %lu\n", error);
         return 0;
     }
 
     // Configure the DCB struct
-    dcb.DCBlength = dcbLen;
+    dcb.DCBlength = (DWORD)dcbLen;
     dcb.BaudRate = BAUD_RATE;     
     dcb.ByteSize = DATA_BITS;             
     dcb.Parity   = NOPARITY;      
     dcb.StopBits = ONESTOPBIT;    
     
     configState = SetCommState(comHandle, &dcb);
-    if (configState == FALSE) {
+    if (!configState) {
         DWORD error = GetLastError();
         printf("Error: telSetPort could not apply COM configuration. Win32 Error: %lu\n", error);
         return 0;
     }
 
     configState = SetCommTimeouts(comHandle, &comTimeOut);
-    if (configState == FALSE) {
+    if (!configState) {
         DWORD error = GetLastError();
         printf("Error: telSetPort could not apply COM timeout configuration. Win32 Error: %lu\n", error);
         return 0;
     }
 
     configState = GetCommState(comHandle, &dcb);
-    if (configState == FALSE) {
+    if (!configState) {
         DWORD error = GetLastError();
         printf("Error: telSetPort GetCommState failed after applying configuration. Win32 Error: %lu\n", error);
         return 0;
@@ -91,12 +91,17 @@ https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-writefile
 int telSendState(GameState *state, HANDLE comHandle) {
     char buffer[64];
     
-    int bytesToWrite = snprintf(buffer, sizeof(buffer), "%d;%d;%d;%d\n", state->health, state->armor, state->reserveAmmo, state->magAmmo);
-                                
+    int bytesToWrite = snprintf(buffer, sizeof(buffer), "%d;%d;%d;%d;%d;%d\n", state->health, state->armor, state->magAmmo, state->reserveAmmo, state->killCount, state->deathCount);
+
+    if (bytesToWrite < 0) {
+        printf("Error: telSendState snprintf encoding failed.\n");
+        return 0;
+    }
+
     DWORD bytesWritten;
     BOOL writeStatus = WriteFile(comHandle, buffer, bytesToWrite, &bytesWritten, NULL);
     
-    if (writeStatus == FALSE) {
+    if (!writeStatus) {
         DWORD error = GetLastError();
         printf("Error: telSendState failed to write to COM port. Bytes written: %lu. Win32 Error: %lu\n", bytesWritten, error);
         return 0;

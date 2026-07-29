@@ -1,34 +1,50 @@
 #ifndef TELEMETRY_H
 #define TELEMETRY_H
 
+#include <windows.h>
+
+/*
+Serial telemetry API.
+Handles COM port setup and transmission of GameState data to the MCU.
+All functions returning int use 1 for success, 0 for failure.
+Output parameters are only written on the success path.
+*/
+
 // COM port configuration
 #define BAUD_RATE CBR_115200
 #define DATA_BITS 8
 
-
-#include <windows.h>
-
-/*
-This file is responsible for the funtions related to the production and transfer of telemetry data from the game to the host application and then the MCU.
-*/
+// COM port timeout configuration (all values in milliseconds)
+#define READ_INTERVAL_TIMEOUT_MS        50
+#define READ_TOTAL_TIMEOUT_CONSTANT_MS  50
+#define READ_TOTAL_TIMEOUT_MULT_MS      10
+#define WRITE_TOTAL_TIMEOUT_CONSTANT_MS 50
+#define WRITE_TOTAL_TIMEOUT_MULT_MS     10
 
 typedef struct GameState {
-	int health;
-	int armor;
-	int magAmmo;
-	int reserveAmmo;
+    int health;
+    int armor;
+    int magAmmo;
+    int reserveAmmo;
+    int killCount;
+    int deathCount;
 } GameState;
 
-// This function is responsible for applying the correct ASCII format to any game state, only used for the console for debugging purposed
+// Prints the game state to stdout in a human-readable format. Used for console debugging only.
 void telStateFormat(GameState *state);
 
-// This function returns a handle to the desired COM port using createFile
-HANDLE telOpenPort(const char *portName);
+// Opens the specified COM port for read/write access.
+// On success, writes the port handle through handlePtr. Caller must call CloseHandle on it.
+// Returns 1 on success, 0 on failure.
+int telOpenPort(const char *portName, HANDLE *handlePtr);
 
-// This function is called to set the desired control settings of a serial communications device. This is done through the DCB struct
+// Configures baud rate, data bits, parity, stop bits, and timeouts on an open COM handle.
+// Returns 1 on success, 0 on failure.
 int telSetPort(HANDLE comHandle);
 
-// Calls the formatting function on the game state and sends it over the serial connection
+// Formats the game state as a CSV line and writes it to the COM port.
+// Protocol format: "health;armor;magAmmo;reserveAmmo;killCount;deathCount\n"
+// Returns 1 on success, 0 on failure.
 int telSendState(GameState *state, HANDLE comHandle);
 
 #endif

@@ -46,6 +46,7 @@
 - Prepared the workspace to start writing code for the Pico by installing the official VS Code SDK extension and creating a project following their guide.
 - Decided on a bare-metal SSD1306 driver approach utilizing official Raspberry Pi examples to fit our use case.
 
+
 ## [18-06-2026] — Firmware Milestone 1 (Serial Ingestion & Parsing)
 
 ### Added
@@ -76,7 +77,53 @@
 ### Changed
 - `telemetry_display.c`: Integrated the SSD1306 driver into the main loop. Parses serial data, formats it into string buffers using `sprintf`, and pushes the frame to the OLED display.
 
-## [28-06-2026]
+## [01-07-2026] — Cleanup
 ### Changed
 - `main.c`: Code cleanup.
 - `memory.c`/`telemetry.c`: Added better error handling through the usage of GetLastError for WinAPI functions.
+
+## [08-07-2026] — Cleanup
+### Changed
+- `telemetry.c`: Fixed protocol field order
+- `telemetry.c`/`telemetry.h`: Refactored `telOpenPort` from returning a `HANDLE` directly to the project-standard `int` status with a `HANDLE *handlePtr` output parameter.
+- `telemetry.c`: Changed `dcbLen` from `DWORD` to `size_t` to match `sizeof` return type.
+- `telemetry.c`: Added `snprintf` return value check for encoding errors.
+- `telemetry.h`: Code cleanup by adding defined constants.
+- `telemetry_display.c`: Fixed inverted return-value checks for `serLineRead` and `serDataHandler`.
+- `telemetry_display.c`: Code cleanup by adding defined constants.
+- `memory.c`: Fixed `memOpenProcess` writing to output parameter even on fail cases.
+- `memory.c`/`memory.h`: Cleanup in their includes.
+- `memory.c`: Improved error messages to include the function name and identifiers.
+- `main.c`: Fixed `main()` exit codes to follow OS convention (0 = success, 1 = failure).
+- `main.c`: Made the consecutive-failure error message reference `MAX_CONSECUTIVE_FAILURES`.
+- `serial.c`/`serial.h`: Code cleanup by adding defined constants.
+- `serial.c`: Added error messages to `serLineRead` (timeout and buffer-full paths) and `serDataHandler` (parse failure).
+- `offsets.h`: Reorganized offset groupings and clarified section comments to distinguish local player offsets from active weapon offsets.
+- `context.md`: Fixed stale reference `memReadPtr` → `memReadPtr32`.
+
+## [12-07-2026] — Implemented kill/death counter
+
+### Added
+- `offsets.h`: Added `OFFSET_KILLS` (`0x1DC`) and `OFFSET_DEATHS` (`0x1E4`), both direct offsets from the LocalPlayer struct.
+- `telemetry.h`/`state.h`: Added `killCount` and `deathCount` fields to the `GameState` struct (host and firmware).
+- `main.c`: Added `memReadInt` calls for kills and deaths in `getGameState`. These follow the health/armor pattern (direct LocalPlayer offset, no pointer chain).
+
+### Changed
+- `telemetry.c`: Updated `telStateFormat` and `telSendState` to include kills and deaths. Serial protocol expanded from 4 fields to 6: `health;armor;magAmmo;reserveAmmo;killCount;deathCount`.
+- `serial.c`: Updated `serDataHandler` to parse 6 fields and `serLineWrite` to echo all 6 values.
+- `telemetry_display.c`: Redesigned OLED layout from single-column (1 value per row) to a two-column grid with fixed x,y coordinates to prevent shifting when digit counts change.
+
+### Notes
+- Kill and death values sit directly on the LocalPlayer struct (offsets `0x1DC` and `0x1E4`), so they do not need extra derenference operations like ammo values.
+- The SSD1306 font (`GetFontIndex`) only supports A-Z and 0-9. Special characters (`:`, `|`, `\`) render as spaces so for now we use spacing as our formatting.
+
+## [27-07-2026] - [29-07-2026] — Build Modes and E2E functionality
+
+### Added
+- `config.h`: Created the standard configuration file to allow users and testers to flip between build modes, refactored `main.c` and `telemetry_display.c` to use these modes.
+- `main.c`: Implemented customizable COM ports through user interaction.
+- `main.c`/`telemetry_display.c`: Implemented end to end functionality by allowing their interaction.
+
+### Changed
+- `main.c`: Removed the debug prints in memory read operations.
+- `telemetry_display.c`: Encapsulated the frame drawing logic in a function.

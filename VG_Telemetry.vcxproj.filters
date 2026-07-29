@@ -35,5 +35,8 @@
     <ClInclude Include="src\telemetry\telemetry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="config\config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,12 +1,12 @@
 > [!NOTE]
-> Everything documented here was performed completely offline.
+> Everything documented here was performed completely offline and on assault cube version `1.3.0.2`.
 
 # Phase 1: Reverse Engineering
 
 ## Research on Memory Addressing
 **Finding the game's base address and offsets -> Static vs. Dynamic:**
 
-Dynamic memory addresses mean that every time you restart the game, the address is loaded at a different location in memory. So, how do we solve this? What remains static is the **offset**—how "far" away this specific memory location is from the base address. Usually, you have a base address (the game executable itself) plus something like the LocalPlayer struct offset. You dereference that pointer and then add the health offset to extract the health value.
+Dynamic memory addresses mean that every time you restart the game, the address is loaded at a different location in memory. What remains static is the **offset**—how "far" away this specific memory location is from the base address. Usually, you have a base address (the game executable itself) plus something like the LocalPlayer struct offset. You dereference that pointer and then add the health offset to extract the health value.
 
 The reason the base memory location changes every time the game restarts is due to a security feature called **ASLR (Address Space Layout Randomization)**. The operating system loads the game's executable (`ac_client.exe`) into a random base address in RAM. The "static" game base address we refer to is actually the relative offset from wherever the OS decided to put `ac_client.exe`.
 
@@ -76,7 +76,7 @@ To interact safely with the Windows API and process memory, we use specific data
 * **`LPVOID` (Long Pointer to Void):** A generic pointer to any memory location (`void *`). `ReadProcessMemory` uses this type for the destination buffer parameter — the local variable where the read data will be written into. We cast our output pointer to `LPVOID` before passing it.
 
 ## Windows API memory reading
-We implemented a custom memory API wrapper using `CreateToolhelp32Snapshot`, `OpenProcess`, and `ReadProcessMemory`. A key design decision was **handle ownership**: functions that create temporary handles (like snapshot handles) are responsible for closing them before returning, while `memOpenProcess` transfers ownership of the process handle to its caller, which must call `CloseHandle` when done.
+We implemented a memory API wrapper using `CreateToolhelp32Snapshot`, `OpenProcess`, and `ReadProcessMemory`. A key design decision was **handle ownership**: functions that create temporary handles (like snapshot handles) are responsible for closing them before returning, while `memOpenProcess` transfers ownership of the process handle to its caller, which must call `CloseHandle` when done.
 
 <details>
 <summary><b>Functions implemented</b></summary>
@@ -85,7 +85,7 @@ We implemented a custom memory API wrapper using `CreateToolhelp32Snapshot`, `Op
 * **`memOpenProcess`**: Calls `OpenProcess` with `PROCESS_VM_READ` (read-only access to prevent accidental game modification) and writes the resulting handle to an output pointer. This function transfers ownership of the handle to the caller (`main.c`), which is responsible for eventually calling `CloseHandle()`.
 * **`memGetModuleBase`**: Takes a module snapshot of the target process using `TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32` (essential for allowing our 64-bit host to properly read a 32-bit process like AssaultCube), iterates to find the module, and fetches its base address.
 * **`memReadInt`**: A safe wrapper around `ReadProcessMemory` to read a single `int` from a dynamic address. Casts the `uintptr_t` address to `LPCVOID` and the output pointer to `LPVOID` to satisfy strict Windows API signature requirements.
-* **`memReadPtr`**: Specifically designed to read pointer addresses from the 32-bit AssaultCube process. It safely reads exactly 4 bytes into a `uint32_t` to prevent buffer over-reads, and then casts it to the host-compatible `uintptr_t` for safe pointer arithmetic in the 64-bit host application.
+* **`memReadPtr32`**: Specifically designed to read pointer addresses from the 32-bit AssaultCube process. It reads exactly 4 bytes into a `uint32_t` to prevent buffer over-reads, and then casts it to the host-compatible `uintptr_t` for safe pointer arithmetic in the 64-bit host application.
    > **Note:** While `memReadInt`  worked for reading pointers because both an `int` and a 32-bit pointer are 4 bytes long, we decided to separate the act of reading a *memory address* (`memReadPtr`) from reading a *game value* (`memReadInt`) to simplify the way these functiosn interact. 
    Also makes it more explicit that we are bridging a x86 target with a x64 host.
 </details>
@@ -93,13 +93,13 @@ We implemented a custom memory API wrapper using `CreateToolhelp32Snapshot`, `Op
 Our testing in `main.c` proved that we can successfully traverse the pointer chains, like (`[ac_client.exe + 0x17E0A8] + 0xEC`) by performing two sequential memory reads and reading the health value.
 
 > [!WARNING]
-> VG_Telemetry must be initiated and tested in the **base lobby** for the game, otherwise health always reads zero. This is a quirk of how AssaultCube initializes the local player object in memory.
+> VG_Telemetry must be initiated and tested in the **base lobby** (main menu) as soon as you start the game. If the host application is attached while already loaded into a deathmatch or active game, it will produce memory read errors (e.g., Win32 Error 299 on the active weapon pointer) or read zeroes for values like health. This is a quirk of how AssaultCube initializes the local player object and weapon pointers in memory.
 
 ---
 
 # Phase 3: Serial Telemetry Implementation
 
-With the memory extraction working, we needed a way to transmit the `GameState` out of the host PC. We built a custom serial transmission module (`telemetry.c` / `telemetry.h`) utilizing the Windows API.
+With the memory extraction working, we needed a way to transmit the `GameState` out of the host PC. We built a serial transmission module (`telemetry.c` / `telemetry.h`) utilizing the Windows API.
 
 ## Windows API Serial Communication
 Just like reading memory, manipulating hardware ports in Windows requires requesting handles and configuring low-level structs. We implemented three core functions: `telOpenPort`, `telSetPort` and `telSendState`
@@ -108,8 +108,8 @@ Just like reading memory, manipulating hardware ports in Windows requires reques
 <summary><b>Functions implemented</b></summary>
 
 * **`telOpenPort`**: Uses `CreateFile` with `GENERIC_READ | GENERIC_WRITE` to request an I/O handle to the target COM port, granting exclusive access to the USB serial connection.
-* **`telSetPort`**: Serial communication requires strict synchronization. We use `GetCommState` and `SetCommState` to inject our configuration into the port's Device Control Block (`DCB`), explicitly setting the baud rate to `115200`, 8 data bits, no parity, and 1 stop bit. *Design Decision (Timeouts):* Crucially, we initialize a `COMMTIMEOUTS` struct and apply it via `SetCommTimeouts`. This ensures that `WriteFile` operations do not block the host thread indefinitely if the Pico is disconnected.
-* **`telSendState`**: *Design Decision (Memory Management):* To minimize dynamic memory allocation and fragmentation, we format the outgoing data using `snprintf` into a static array (`char buffer[64]`). We then use `WriteFile` to push the formatted CSV string (`%d;%d;%d;%d\n`) out through the COM handle.
+* **`telSetPort`**: Serial communication requires strict synchronization. We use `GetCommState` and `SetCommState` to inject our configuration into the port's Device Control Block (`DCB`), explicitly setting the baud rate to `115200`, 8 data bits, no parity, and 1 stop bit. *Design Decision (Timeouts)*: We initialize a `COMMTIMEOUTS` struct and apply it via `SetCommTimeouts`. This ensures that `WriteFile` operations do not block the host thread indefinitely if the Pico is disconnected.
+* **`telSendState`**: *Design Decision (Memory Management):* To minimize dynamic memory allocation and fragmentation, we format the outgoing data using `snprintf` into a static array (`char buffer[64]`). We then use `WriteFile` to push the formatted CSV string out through the COM handle.
 </details>
 
 > [!IMPORTANT]
@@ -129,7 +129,7 @@ To achieve the hardware/embedded programming part of this project we decided to 
 *   **Display:** SSD1306
 
 **Architectural Flow:**
-1.  **Host PC (`VG_Telemetry.exe`):** The Windows C program continues reading live telemetry (health, armor, active ammo) from the game memory. It then opens a standard Serial Port (COM) connection to the Pico via USB and sends the telemetry data as formatted packets.
+1.  **Host PC (`VG_Telemetry.exe`):** The Windows C program continues reading live telemetry from the game memory. It then opens a standard Serial Port (COM) connection to the Pico via USB and sends the telemetry data as formatted packets.
 2.  **Raspberry Pi Pico:** Running a C/C++ firmware program, the Pico acts as a native USB Serial device. It runs an infinite loop waiting to receive and parse the incoming serial packets from the host PC.
 3.  **OLED Display (I2C):** The Pico utilizes a custom graphics driver and its hardware I2C controllers (using the following wires: VCC, GND, SDA, and SCL) to send drawing commands to the OLED screen.
 
@@ -155,14 +155,27 @@ For the OLED display, we decided to implement a minimal SSD1306 driver, focusing
 
 ## Serial Telemetry Module
 
-* **Reading Data:** We avoided standard blocking functions like `fgets`. Instead, we built a custom reading loop utilizing the Pico SDK's `getchar_timeout_us()`.
-* **Parsing Data:** We used `sscanf` to parse the CSV string. Crucially, we implemented strict validation by checking the return value of `sscanf`. If it does not successfully match all 4 expected variables, the packet was corrupted.
+* **Reading Data:** We avoided standard blocking functions like `fgets`. Instead, we built a reading loop utilizing the Pico SDK's `getchar_timeout_us()`.
+* **Parsing Data:** We used `sscanf` to parse the CSV string and did validation by checking the return value of `sscanf`. If it does not successfully match all expected variables, the packet was corrupted.
 * **Struct:** We defined the `GameState` struct in `state.h`. For simplicity and readability, we pass a standard single pointer (`GameState *state`) to the parser function, as no dynamic memory allocation or pointer re-assignment is occurring in the MCUs.
 * **Echo Testing:** Since the Pico is configured for "Console over USB", we implemented a `serLineWrite` function that uses standard `printf` to send the parsed values back up the USB cable to the host application.
 
 ## SSD1306 Display firmware
 
-To push our telemetry data onto the physical display, we ported a stripped-down SSD1306 I2C driver.
+To push our telemetry data onto the physical display, we ported a SSD1306 I2C driver.
 
-* **What we did:** We used the official Raspberry Pi Pico SSD1306 example as a blueprint. We extracted the complex hex-code initialization sequence and the basic `i2c_write_blocking` wrappers, but we stripped out all graphics primitives (line drawing, circles, scrolling) and images, leaving only a minimal text-engine capable of mapping ASCII characters to an 8x8 pixel font array.
+* **What we did:** We used the official Raspberry Pi Pico SSD1306 example as our driver.
 * **Encapsulation:** To increase readability and encapsulation we created wrapper functions (`ssd1306_setup` and `ssd1306_render_full`). This hides raw hardware logic (like GPIO pin mapping and `render_area` boundaries) from the main `telemetry_display.c`.
+
+
+# Project Compilation and Build Modes
+
+## Build Mode Options
+
+* **`E2E` (End-to-End):** Standard production pipeline. The host application reads game memory, formats data into CSV packets, and transmits them over COM port to the Pico. The Pico parses the data and renders it to the SSD1306 display.
+* **`PICO_ECHO`:** Serial loopback testing mode. The host application transmits telemetry over COM port to the Pico, and the Pico echoes parsed values back to the host via USB serial (`serLineWrite`) for protocol verification.
+* **`CONSOLE`:** Host-only debugging mode. Telemetry is read from memory and formatted directly to the PC console (`telStateFormat`). Serial COM port initialization is disabled (`HAS_COM_PORT` evaluated to `0`), allowing host testing without hardware attached.
+
+## What we ended up doing
+
+We defined a central `#define BUILD_MODE` macro in `config/config.h` to drive conditional compilation (`#if HAS_COM_PORT`, `#if BUILD_MODE == ...`). This allows testers to perform standalone testing on all three layers, the only downside is the recompilation effort.

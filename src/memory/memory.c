@@ -2,7 +2,7 @@
 #include <tlhelp32.h> 
 #include <stdio.h>    
 #include <string.h>   
-#include <Windows.h>
+#include <windows.h>
 
 /*
 https://learn.microsoft.com/en-us/windows/win32/api/tlhelp32/nf-tlhelp32-createtoolhelp32snapshot
@@ -20,14 +20,14 @@ int memGetProcessId(const char *processName, DWORD *pidPtr) {
     PROCESSENTRY32 entry;
     entry.dwSize = sizeof(PROCESSENTRY32);
     BOOL hasNext = Process32First(handleSnapshot, &entry);
-    if (hasNext == FALSE) {
+    if (!hasNext) {
         DWORD error = GetLastError();
         printf("Error: memGetProcessId could not get first process entry. Win32 Error: %lu\n", error);
         CloseHandle(handleSnapshot);
         return 0;
     }
 
-    while (hasNext == TRUE) {
+    while (hasNext) {
         if (strcmp(entry.szExeFile, processName) == 0) {
             *pidPtr = entry.th32ProcessID;
             CloseHandle(handleSnapshot);
@@ -36,7 +36,7 @@ int memGetProcessId(const char *processName, DWORD *pidPtr) {
         hasNext = Process32Next(handleSnapshot, &entry);
     }
 
-    printf("Error: Process was not found.\n");
+    printf("Error: memGetProcessId could not find process: '%s'.\n", processName);
     CloseHandle(handleSnapshot);
     return 0;
 }   
@@ -47,12 +47,13 @@ https://learn.microsoft.com/en-us/windows/win32/procthread/process-security-and-
 https://learn.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-closehandle
 */
 int memOpenProcess(DWORD pid, HANDLE *handlePtr) {
-    *handlePtr = OpenProcess(PROCESS_VM_READ, FALSE, pid);
-    if (*handlePtr == NULL) {
+    HANDLE handle = OpenProcess(PROCESS_VM_READ, FALSE, pid);
+    if (handle == NULL) {
         DWORD error = GetLastError();
         printf("Error: memOpenProcess could not open process with PID %lu. Win32 Error: %lu\n", pid, error);
         return 0;
     }
+    *handlePtr = handle;
     return 1;
 }
 
@@ -71,14 +72,14 @@ int memGetModuleBase(DWORD pid, const char *moduleName, uintptr_t *baseAddressPt
     MODULEENTRY32 entry;
     entry.dwSize = sizeof(MODULEENTRY32);
     BOOL hasNext = Module32First(handleSnapshot, &entry);
-    if (hasNext == FALSE) {
+    if (!hasNext) {
         DWORD error = GetLastError();
         printf("Error: memGetModuleBase could not get first module entry. Win32 Error: %lu\n", error);
         CloseHandle(handleSnapshot);
         return 0;
     }
 
-    while (hasNext == TRUE) {
+    while (hasNext) {
         if (strcmp(entry.szModule, moduleName) == 0) {
             *baseAddressPtr = (uintptr_t)entry.modBaseAddr;
             CloseHandle(handleSnapshot);
@@ -87,7 +88,7 @@ int memGetModuleBase(DWORD pid, const char *moduleName, uintptr_t *baseAddressPt
         hasNext = Module32Next(handleSnapshot, &entry);
     }
 
-    printf("Error: Module was not found.\n");
+    printf("Error: memGetModuleBase could not find module: %s.\n", moduleName);
     CloseHandle(handleSnapshot);
     return 0;
 }
@@ -105,6 +106,13 @@ int memReadInt(HANDLE processHandle, uintptr_t address, int *valuePtr) {
         DWORD error = GetLastError();
         printf("Error: memReadInt failed to read at address 0x%08X. Bytes read: %zu. Win32 Error: %lu\n",
                (unsigned int)address, bytesRead, error);
+        return 0;
+    }
+    // Even if the number of bytes read does not match the number of bytes we wanted to read,
+    // the function will still write to the output buffer because ReadProcessMemory did not fail
+    if (bytesRead != bytesToRead) {
+        printf("Error: memReadInt partial read at address 0x%08X. Expected: %zu, got: %zu\n",
+               (unsigned int)address, bytesToRead, bytesRead);
         return 0;
     }
     return 1;
@@ -125,6 +133,11 @@ int memReadPtr32(HANDLE processHandle, uintptr_t address, uintptr_t *valuePtr) {
         DWORD error = GetLastError();
         printf("Error: memReadPtr32 failed to read pointer at address 0x%08X. Bytes read: %zu. Win32 Error: %lu\n",
                (unsigned int)address, bytesRead, error);
+        return 0;
+    }
+    if (bytesRead != bytesToRead) {
+        printf("Error: memReadPtr32 partial read at address 0x%08X. Expected: %zu, got: %zu\n",
+               (unsigned int)address, bytesToRead, bytesRead);
         return 0;
     }
     // The value is stored at tempAddress because lpBuffer holds its pointer
