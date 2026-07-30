@@ -109,6 +109,7 @@ Just like reading memory, manipulating hardware ports in Windows requires reques
 
 * **`telOpenPort`**: Uses `CreateFile` with `GENERIC_READ | GENERIC_WRITE` to request an I/O handle to the target COM port, granting exclusive access to the USB serial connection.
 * **`telSetPort`**: Serial communication requires strict synchronization. We use `GetCommState` and `SetCommState` to inject our configuration into the port's Device Control Block (`DCB`), explicitly setting the baud rate to `115200`, 8 data bits, no parity, and 1 stop bit. *Design Decision (Timeouts)*: We initialize a `COMMTIMEOUTS` struct and apply it via `SetCommTimeouts`. This ensures that `WriteFile` operations do not block the host thread indefinitely if the Pico is disconnected.
+* **`telReadPort`**: Uses `ReadFile` to get incoming data from the COM port, used in the `PICO+ECHO` build mode. *Design Decision (Memory Safety)*: Because `ReadFile` handles raw bytes rather than strings, we explicitly inject a null terminator (`\0`) at the exact `bytesRead` index within the local buffer.
 * **`telSendState`**: *Design Decision (Memory Management):* To minimize dynamic memory allocation and fragmentation, we format the outgoing data using `snprintf` into a static array (`char buffer[64]`). We then use `WriteFile` to push the formatted CSV string out through the COM handle.
 </details>
 

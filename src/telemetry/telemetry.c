@@ -85,11 +85,29 @@ int telSetPort(HANDLE comHandle) {
 }
 
 /*
+https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-readfile
+*/
+int telReadPort(HANDLE comHandle) {
+    char buffer[TEL_BUFFER];
+    DWORD bytesToRead = TEL_BUFFER - 1; // Must reserve a byte for null terminator
+    DWORD bytesRead;
+    BOOL readStatus = ReadFile(comHandle, buffer, bytesToRead, &bytesRead, NULL);
+    if (!readStatus) {
+        DWORD error = GetLastError();
+        printf("Error: telReadPort failed to read from the COM port. Bytes read: %lu. Win32 Error: %lu\n", bytesRead, error);
+        return 0;
+    }
+    buffer[bytesRead] = '\0';
+    printf("%s", buffer);
+    return 1;
+}
+
+/*
 https://learn.microsoft.com/pt-br/cpp/c-runtime-library/reference/snprintf-snprintf-snprintf-l-snwprintf-snwprintf-l?view=msvc-170
 https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-writefile
 */
 int telSendState(GameState *state, HANDLE comHandle) {
-    char buffer[64];
+    char buffer[TEL_BUFFER];
     
     int bytesToWrite = snprintf(buffer, sizeof(buffer), "%d;%d;%d;%d;%d;%d\n", state->health, state->armor, state->magAmmo, state->reserveAmmo, state->killCount, state->deathCount);
 
@@ -109,3 +127,4 @@ int telSendState(GameState *state, HANDLE comHandle) {
     
     return 1; 
 }
+

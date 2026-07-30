@@ -133,8 +133,9 @@ int main(void) {
     #if HAS_COM_PORT
     HANDLE comHandle;
     char port[5];
+    unsigned int portBuffer = (unsigned int)sizeof(port);
     printf("Enter COM port (works for COM1 - COM9):\n");
-    if (scanf_s("%s", port, sizeof(port)) != 1) {
+    if (scanf_s("%s", port, portBuffer) != 1) {
         printf("Error: Failed to read COM port\n");
         CloseHandle(processHandle);
         return 1;
@@ -160,6 +161,9 @@ int main(void) {
             telStateFormat(&state);
             #else
             telSendState(&state, comHandle);
+            #if BUILD_MODE == PICO_ECHO
+            telReadPort(comHandle);
+            #endif
             #endif
         }
         else {

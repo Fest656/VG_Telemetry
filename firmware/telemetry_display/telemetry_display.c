@@ -74,7 +74,9 @@ int main() {
         }
 
         // DataHandler successfully populated the struct, we want to always echo back for testing purposes
+        #if BUILD_MODE == PICO_ECHO
         serLineWrite(&state);
+        #endif
         #if BUILD_MODE == E2E
         drawFrame(&state, buf, textBuffer);
         #endif

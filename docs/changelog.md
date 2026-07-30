@@ -127,3 +127,12 @@
 ### Changed
 - `main.c`: Removed the debug prints in memory read operations.
 - `telemetry_display.c`: Encapsulated the frame drawing logic in a function.
+
+[29-07-2026] - Fixes to the Echo mode
+
+### Added
+- `telemetry.c`/`telemetry.h`: Added `telReadPort` so the host app can actually read and output the data from the Pico.
+
+### Changed
+- `telemetry_display.c`: Added PICO_ECHO macro guard to the function that echoes lines back to the PC.
+- 
