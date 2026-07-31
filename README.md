@@ -49,7 +49,7 @@ All setup documentation can be found in the [`docs/`](docs/) directory:
 
 * **Version:** All memory offsets are hardcoded specifically for AssaultCube v1.3.0.2 (32-bit).
 * **OS:** As the project  was built using the Window's API, it only works natively on Windows.
-* **COM Port Handling:** The serial communication requires manual or hardcoded COM port selection. Implementing auto-detection and hot-plug reconnection would improve this.
+* **COM Port Handling:** The serial communication requires manual COM port selection. Implementing auto-detection and hot-plug reconnection would improve this.
 * **OLED Character Set:** The SSD1306 driver uses a minimal 8x8 ASCII font array. Special symbols (such as `:`, `/`, or icons) are not available, limiting graphical formatting. This can also be improved.
 
 
