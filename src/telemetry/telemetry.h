@@ -17,9 +17,12 @@ Output parameters are only written on the success path.
 #define DATA_BITS 8
 
 // COM port timeout configuration (all values in milliseconds)
-#define READ_INTERVAL_TIMEOUT_MS        50
-#define READ_TOTAL_TIMEOUT_CONSTANT_MS  50
-#define READ_TOTAL_TIMEOUT_MULT_MS      10
+/*
+A value of MAXDWORD, combined with zero values for both the ReadTotalTimeoutConstant and ReadTotalTimeoutMultiplier members, specifies that the read operation is to return immediately with the bytes that have already been received, even if no bytes have been received.
+*/
+#define READ_INTERVAL_TIMEOUT_MS        MAXDWORD
+#define READ_TOTAL_TIMEOUT_CONSTANT_MS  0
+#define READ_TOTAL_TIMEOUT_MULT_MS      0
 #define WRITE_TOTAL_TIMEOUT_CONSTANT_MS 50
 #define WRITE_TOTAL_TIMEOUT_MULT_MS     10
 
@@ -33,7 +36,7 @@ typedef struct GameState {
 } GameState;
 
 // Prints the game state to stdout in a human-readable format. Used for console debugging only.
-void telStateFormat(GameState *state);
+void telPrintState(GameState *state);
 
 // Opens the specified COM port for read/write access.
 // On success, writes the port handle through handlePtr. Caller must call CloseHandle on it.
@@ -46,10 +49,11 @@ int telSetPort(HANDLE comHandle);
 // Used to receive data echoed from the pico
 int telReadPort(HANDLE comHandle);
 
+// Validates the data of a game state to ensure neat formatting
+void telDataCheck(GameState *statePtr);
 
 // Formats the game state as a CSV line and writes it to the COM port.
 // Protocol format: "health;armor;magAmmo;reserveAmmo;killCount;deathCount\n"
-
-int telSendState(GameState *state, HANDLE comHandle);
+int telSendState(GameState *statePtr, HANDLE comHandle);
 
 #endif

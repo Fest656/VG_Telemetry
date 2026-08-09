@@ -51,6 +51,7 @@ static void drawFrame(GameState *statePtr, uint8_t *frameBuffer, char *textBuffe
 
 int main() {
     stdio_init_all();
+    sleep_ms(2000);
     // Initialize the hardware pins and the SSD1306 screen
     #if BUILD_MODE == E2E
     ssd1306Setup();

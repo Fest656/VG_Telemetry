@@ -58,22 +58,11 @@ void SSD1306_send_cmd_list(uint8_t *buf, int num) {
         SSD1306_send_cmd(buf[i]);
 }
 
-void SSD1306_send_buf(uint8_t buf[], int buflen) {
-    // in horizontal addressing mode, the column address pointer auto-increments
-    // and then wraps around to the next page, so we can send the entire frame
-    // buffer in one gooooooo!
-
-    // copy our frame buffer into a new buffer because we need to add the control byte
-    // to the beginning
-
-    uint8_t *temp_buf = malloc(buflen + 1);
-
-    temp_buf[0] = 0x40;
-    memcpy(temp_buf+1, buf, buflen);
-
-    i2c_write_blocking(i2c_default, SSD1306_I2C_ADDR, temp_buf, buflen + 1, false);
-
-    free(temp_buf);
+// I removed the old malloc/memcpy that the old driver had for this simpler version
+void SSD1306_send_buf(const uint8_t buf[], int buflen) {
+    static const uint8_t control_byte = 0x40;
+    i2c_write_blocking(i2c_default, SSD1306_I2C_ADDR, &control_byte, 1, true);  // nostop=true: hold the bus
+    i2c_write_blocking(i2c_default, SSD1306_I2C_ADDR, buf, buflen, false);      // continue, then STOP
 }
 
 void SSD1306_init() {
@@ -215,7 +204,7 @@ static inline int GetFontIndex(uint8_t ch) {
     else if (ch >= '0' && ch <='9') {
         return  ch - '0' + 27;
     }
-    else return  0; // Not got that char so space.
+    else return  0; // Render whitespace if char is not available.
 }
 
 static void WriteChar(uint8_t *buf, int16_t x, int16_t y, uint8_t ch) {

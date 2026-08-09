@@ -8,7 +8,7 @@
 #define CONSOLE		 3 // Testing functionality Host -> CMD
 
 
-#define BUILD_MODE CONSOLE // Change this according to what you want the application to do, must be recompiled
+#define BUILD_MODE E2E // Change this according to what you want the application to do, must be recompiled
 
 
 // Do not change this

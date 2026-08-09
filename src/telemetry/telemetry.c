@@ -5,7 +5,7 @@
 // https://learn.microsoft.com/en-us/previous-versions/ms810467(v=msdn.10)?redirectedfrom=MSDN
 
 // The protocol transports data in the following format: [ Health; Armor; Mag; Reserve; Kills; Deaths ]
-void telStateFormat(GameState *state) {
+void telPrintState(GameState *state) {
     printf("HP:%d\nArmor:%d\nAmmo in mag:%d\nReserve ammo:%d\nKills:%d\nDeaths:%d\n", state->health, state->armor, state->magAmmo, state->reserveAmmo, state->killCount, state->deathCount);
 }
 
@@ -54,11 +54,17 @@ int telSetPort(HANDLE comHandle) {
     }
 
     // Configure the DCB struct
-    dcb.DCBlength = (DWORD)dcbLen;
-    dcb.BaudRate = BAUD_RATE;     
-    dcb.ByteSize = DATA_BITS;             
-    dcb.Parity   = NOPARITY;      
-    dcb.StopBits = ONESTOPBIT;    
+    dcb.DCBlength    = (DWORD)dcbLen;
+    dcb.BaudRate     = BAUD_RATE;     
+    dcb.ByteSize     = DATA_BITS;             
+    dcb.Parity       = NOPARITY;      
+    dcb.StopBits     = ONESTOPBIT;    
+    dcb.fOutxCtsFlow = FALSE;
+    dcb.fRtsControl  = RTS_CONTROL_ENABLE;
+    dcb.fDtrControl  = DTR_CONTROL_ENABLE;
+    dcb.fOutX        = FALSE; 
+    dcb.fInX         = FALSE;
+
     
     configState = SetCommState(comHandle, &dcb);
     if (!configState) {
@@ -102,14 +108,21 @@ int telReadPort(HANDLE comHandle) {
     return 1;
 }
 
+// Through testing we verified only the health value could sometimes reach undesired numbers such as negatives
+void telDataCheck(GameState *statePtr) {
+    if (statePtr->health < 0) {
+        statePtr->health = 0;
+    }
+}
+
 /*
 https://learn.microsoft.com/pt-br/cpp/c-runtime-library/reference/snprintf-snprintf-snprintf-l-snwprintf-snwprintf-l?view=msvc-170
 https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-writefile
 */
-int telSendState(GameState *state, HANDLE comHandle) {
+int telSendState(GameState *statePtr, HANDLE comHandle) {
     char buffer[TEL_BUFFER];
     
-    int bytesToWrite = snprintf(buffer, sizeof(buffer), "%d;%d;%d;%d;%d;%d\n", state->health, state->armor, state->magAmmo, state->reserveAmmo, state->killCount, state->deathCount);
+    int bytesToWrite = snprintf(buffer, sizeof(buffer), "%d;%d;%d;%d;%d;%d\n", statePtr->health, statePtr->armor, statePtr->magAmmo, statePtr->reserveAmmo, statePtr->killCount, statePtr->deathCount);
 
     if (bytesToWrite < 0) {
         printf("Error: telSendState snprintf encoding failed.\n");

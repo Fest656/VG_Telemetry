@@ -83,7 +83,7 @@ void SSD1306_send_cmd(uint8_t cmd);
 void SSD1306_send_cmd_list(uint8_t *buf, int num);
 
 // Sends a byte buffer of data to the display controller.
-void SSD1306_send_buf(uint8_t buf[], int buflen);
+void SSD1306_send_buf(const uint8_t buf[], int buflen);
 
 // Initializes the SSD1306 display controller.
 void SSD1306_init(void);

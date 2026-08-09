@@ -135,4 +135,28 @@
 
 ### Changed
 - `telemetry_display.c`: Added PICO_ECHO macro guard to the function that echoes lines back to the PC.
-- 
+
+[02-08-2026] - Documentation changed
+
+### Added
+- `AI_usage.md`: Created in order to give an insight as to how I leveraged AI to learn the things needed for this project.
+
+### Changed
+- `context.md`: Deleted the documentation for the actual project development and kept the research done for the project.
+
+## [07-08-2026] — Documentation Polish, MVP Audit, and First Hardware Test
+
+### Added
+- `telemetry.c`: Added explicit DCB flow control settings (`fDtrControl`, `fRtsControl`, `fOutxCtsFlow`, `fOutX`, `fInX`) to fix Error 121 (SEM_TIMEOUT).
+- `telemetry_display.c`: Added `sleep_ms(2000)` after `stdio_init_all()` to allow USB CDC enumeration before entering the main loop.
+- `setup.md`: Added build mode configuration step, COM port prompt mention.
+- `main.c`: Added the port reading functionality to E2E mode so that the host console can receive feedback errors from the Pico.
+
+### Changed
+- `main.c`: Fixed `telSendState` return value being discarded. Rewrote the fail system to ensure every error is logged and that succesful ticks zero the fail count. Removed redundant `handleapi` import.
+- `telemetry.c\telemetry.h`: Changed function signature from `telStateFormat` to `telPrintState`.
+- `README.md`: Added a reference to the possibility of multithreading and caching.
+- `telemetry.h`: Removed the timeout configuration so that the host app can always receive error feeback from the Pico without blocking the process.
+
+### Tested
+- First real hardware test with the Pico in `PICO_ECHO` mode. Identified and fixed USB write timeout (Error 121) caused by missing DCB flow control configuration.

@@ -24,4 +24,12 @@ Connect the OLED display to the Raspberry Pi Pico using the following pins:
 
 ## Reference Datasheets
 * [Raspberry Pi Pico Pinout (PDF)](https://pip-assets.raspberrypi.com/categories/610-raspberry-pi-pico/documents/RP-008309-DS-1-Pico-R3-A4-Pinout.pdf)
-* [SSD1306 Datasheet & Info](https://www.datasheethub.com/ssd1306-128x64-mono-0-96-inch-i2c-oled-display/)
+* [SSD1306 Datasheet & Info](https://www.datasheethub.com/ssd1306-128x64-mono-0-96-inch-i2c-oled-display/) — Note: this page documents the 128x64 variant; this project uses the 128x32 model but the command interface is identical.
+
+
+## Development References
+
+* [Raspberry Pi Pico SSD1306 Example](https://github.com/raspberrypi/pico-examples/tree/master/i2c/ssd1306_i2c) - I ported the initialisation sequence and the `WriteString`/`WriteChar` functions from this example.
+* [daschr/pico-ssd1306](https://github.com/daschr/pico-ssd1306/tree/main) - An alternative lightweight library that serves as a good educational reference for structuring an OLED driver.
+* [Pico SDK Runtime API](https://www.raspberrypi.com/documentation/pico-sdk/runtime.html) - Documentation for the SDK's C runtime.
+* [Pico SDK source code](https://github.com/raspberrypi/pico-sdk) - Source files for Pico SDK.

@@ -4,7 +4,7 @@
 #include "state.h"
 
 // Serial read timeout for getchar_timeout_us (in microseconds)
-#define SERIAL_CHAR_TIMEOUT_US 100
+#define SERIAL_CHAR_TIMEOUT_US (250*1000) // 250ms
 
 // Maximum line buffer size for incoming telemetry packets
 #define TEL_BUFFER 64

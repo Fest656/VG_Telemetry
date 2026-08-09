@@ -1,8 +1,8 @@
 #include "memory/memory.h"
 #include "memory/offsets.h"
 #include "telemetry/telemetry.h"
-#include <handleapi.h>
 #include <stdio.h>
+#include <synchapi.h>
 #include <windows.h>
 #include "../config/config.h"
 
@@ -144,7 +144,7 @@ int main(void) {
         CloseHandle(processHandle);
         return 1;
     }
-    // Main is now responsible to the COM port handle
+    // Main is now responsible for the COM port handle
     if (!telSetPort(comHandle)) {
         CloseHandle(processHandle);
         CloseHandle(comHandle);
@@ -154,34 +154,52 @@ int main(void) {
 
     GameState state;
     int failCount = 0;
+    int tickSuccess = 0;
     while (1) {
-        if (getGameState(processHandle, localPlayer, &state)) {
-            failCount = 0;
-            #if BUILD_MODE == CONSOLE
-            telStateFormat(&state);
-            #else
-            telSendState(&state, comHandle);
-            #if BUILD_MODE == PICO_ECHO
-            telReadPort(comHandle);
-            #endif
-            #endif
-        }
-        else {
-            failCount++;
-            printf("Warning: Failed to read complete game state this tick.\n");
-        }
-
         if (failCount == MAX_CONSECUTIVE_FAILURES) {
-            printf("Error: Failed to read game state for %d ticks in a row, exiting...\n",
-                   MAX_CONSECUTIVE_FAILURES);
+            Sleep(3000); // Give a chance to see the error codes
             break;
         }
-        
+        tickSuccess = 1; // Assume tick success until something inevitably breaks
+
+        if (!getGameState(processHandle, localPlayer, &state)) {
+            printf("Warning: Failed to get game state this tick.\n");
+            tickSuccess = 0;
+        }
+
+        if (tickSuccess) {
+            telDataCheck(&state);
+
+            #if BUILD_MODE == CONSOLE
+            telPrintState(&state);
+            #else
+            if (!telSendState(&state, comHandle)) {
+                printf("Warning: Failed to send game state this tick.\n");
+                tickSuccess = 0;
+            }
+            // We want to read even if we failed to write to the COM port
+            else if (!telReadPort(comHandle)) {
+                printf("Warning: Failed to read from the COM port.\n");
+                tickSuccess = 0;
+            }
+            #endif
+
+        }
+
+        if (tickSuccess) {
+            failCount = 0;
+        } 
+        else {
+            failCount++;
+        }
+
         Sleep(TELEMETRY_POLL_RATE_MS);
     }
+
     #if HAS_COM_PORT
     CloseHandle(comHandle);
     #endif
     CloseHandle(processHandle);
     return 0;
 }
+
