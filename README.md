@@ -50,13 +50,9 @@ All setup documentation can be found in the [`docs/`](docs/) directory:
 
 * **Architecture:** Since USB has no Direct Memory Access to the computer's RAM, this project was not possible to do in a strictly "external" manner.
 * **Version:** All memory offsets are hardcoded specifically for AssaultCube v1.3.0.2 (32-bit).
-<<<<<<< HEAD
 * **OS:** As the project  was built using the Window's API, it only works natively on Windows.
-=======
-* **OS:** As the project was built using the Windows API, it only works natively on Windows.
->>>>>>> a8ce674 (feat: first working release)
 * **COM Port Handling:** The serial communication requires manual COM port selection. Implementing auto-detection and hot-plug reconnection would improve this.
-* **OLED Character Set:** The SSD1306 driver uses a minimal 8x8 ASCII font array. Special symbols (such as `:`, `/`, or icons) are not available, limiting graphical formatting. This can also be improved.
+* **OLED Display set:** The SSD1306 driver uses a minimal 8x8 ASCII font array. Special symbols (such as `:`, `/`, or icons) are not available, limiting graphical formatting. This can also be improved.
 * **Caching**: Caching could be implemented to prevent unnecessary operations such as sending game state when no values have actually been updated in game since the last tick.
 * **Threading**: Altough not a real issue as of right now, Multithreading could be employed to delegate different tasks to diffent threads
 * **Clipping**: There are some issues with text being clipped out of bounds in the display.
