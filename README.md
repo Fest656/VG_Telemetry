@@ -1,6 +1,6 @@
 # AssaultCube Telemetry Tracker
 
-A real-time hardware telemetry system that reads live game state from **AssaultCube** via the Windows API, then transmits it over serial to a **Raspberry Pi Pico** microcontroller driving physical displays.
+A real-time hardware telemetry system that reads live game state from AssaultCube via the Windows API, then transmits it over serial to a Raspberry Pi Pico microcontroller driving physical displays.
 Written in C using the Windows API and the Pico SDK, parses dynamic pointer chains to extract live game state and transmits it over USB to be displayed on an OLED.
 The host application is strictly read-only and written for AssaultCube version 1.3.0.2.
 Built as a personal project to learn reverse engineering, Windows process internals, embedded systems and serial communication.
